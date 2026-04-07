@@ -226,7 +226,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
   // Load auth from storage if not loaded
-  if (!authStore.isAuthenticated && localStorage.getItem('token')) {
+  if (!authStore.isAuthenticated && (sessionStorage.getItem('token') || localStorage.getItem('token'))) {
     authStore.loadFromStorage()
   }
 

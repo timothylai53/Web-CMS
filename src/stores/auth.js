@@ -49,8 +49,10 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data.user
         this.isAuthenticated = true
         
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('user', JSON.stringify(this.user))
+        sessionStorage.setItem('token', this.token)
+        sessionStorage.setItem('user', JSON.stringify(this.user))
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
         
         // Check if account is deactivated
         if (this.user.isActive === false) {
@@ -106,8 +108,10 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data.user
         this.isAuthenticated = true
         
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('user', JSON.stringify(this.user))
+        sessionStorage.setItem('token', this.token)
+        sessionStorage.setItem('user', JSON.stringify(this.user))
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
         
         return { success: true }
       } catch (error) {
@@ -124,17 +128,25 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.isAuthenticated = false
       this.token = null
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('user')
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     },
 
     loadFromStorage() {
-      const token = localStorage.getItem('token')
-      const user = localStorage.getItem('user')
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token')
+      const user = sessionStorage.getItem('user') || localStorage.getItem('user')
       if (token && user) {
         this.token = token
         this.user = JSON.parse(user)
         this.isAuthenticated = true
+        if (!sessionStorage.getItem('token') || !sessionStorage.getItem('user')) {
+          sessionStorage.setItem('token', token)
+          sessionStorage.setItem('user', user)
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+        }
       }
     }
   }
