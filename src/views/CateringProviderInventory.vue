@@ -823,6 +823,11 @@ export default {
     const showBulkAddModal = ref(false);
     const bulkItemType = ref('consumable');
     const bulkItems = ref([]);
+
+    const getAuthHeaders = () => {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    };
     
     const itemForm = ref({
       itemType: 'consumable',
@@ -898,7 +903,7 @@ export default {
     const loadStatistics = async () => {
       try {
         const response = await axios.get(API_URL + '/inventory/statistics', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: getAuthHeaders()
         });
         statistics.value = response.data;
       } catch (error) {
@@ -917,7 +922,7 @@ export default {
         
         const response = await axios.get(API_URL + '/inventory/items', {
           params,
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: getAuthHeaders()
         });
         
         items.value = response.data;
@@ -931,7 +936,7 @@ export default {
     const loadLowStockAlerts = async () => {
       try {
         const response = await axios.get(API_URL + '/inventory/alerts/low-stock', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: getAuthHeaders()
         });
         lowStockItems.value = response.data;
       } catch (error) {
@@ -942,7 +947,7 @@ export default {
     const loadExpiringItems = async () => {
       try {
         const response = await axios.get(API_URL + '/inventory/alerts/expiring', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: getAuthHeaders()
         });
         expiringItems.value = response.data;
       } catch (error) {
@@ -972,14 +977,14 @@ export default {
           await axios.put(
             `${API_URL}/inventory/items/${editingItem.value._id}`,
             itemData,
-            { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+            { headers: getAuthHeaders() }
           );
           alert('Item updated successfully');
         } else {
           await axios.post(
             API_URL + '/inventory/items',
             itemData,
-            { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+            { headers: getAuthHeaders() }
           );
           alert('Item added successfully');
         }
@@ -1134,7 +1139,7 @@ export default {
             await axios.post(
               API_URL + '/inventory/items',
               item,
-              { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+              { headers: getAuthHeaders() }
             );
             successCount++;
           } catch (error) {
@@ -1223,7 +1228,7 @@ export default {
             adjustment,
             reason: stockAdjustment.value.reason
           },
-          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          { headers: getAuthHeaders() }
         );
         
         alert('Stock adjusted successfully');
@@ -1245,7 +1250,7 @@ export default {
       try {
         await axios.delete(
           `${API_URL}/inventory/items/${item._id}`,
-          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          { headers: getAuthHeaders() }
         );
         alert('Item deleted successfully');
         await loadItems();
