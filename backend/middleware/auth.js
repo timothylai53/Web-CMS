@@ -23,7 +23,8 @@ export const authenticate = (req, res, next) => {
 
 // Middleware for Catering Provider access
 export const isCateringProvider = (req, res, next) => {
-  if (req.user.role !== 'cateringProvider') {
+  const providerRoles = ['cateringProvider', 'admin'];
+  if (!providerRoles.includes(req.user.role)) {
     return res.status(403).json({ message: 'Access denied. Catering Provider only.' });
   }
   next();
@@ -39,7 +40,11 @@ export const isSuperAdmin = (req, res, next) => {
 
 // Middleware for approved Catering Provider
 export const isApprovedProvider = (req, res, next) => {
-  if (req.user.role !== 'cateringProvider' || req.user.approvalStatus !== 'approved') {
+  const providerRoles = ['cateringProvider', 'admin'];
+  if (!providerRoles.includes(req.user.role)) {
+    return res.status(403).json({ message: 'Access denied. Approved Catering Provider only.' });
+  }
+  if (req.user.role === 'cateringProvider' && req.user.approvalStatus !== 'approved') {
     return res.status(403).json({ message: 'Access denied. Approved Catering Provider only.' });
   }
   next();
