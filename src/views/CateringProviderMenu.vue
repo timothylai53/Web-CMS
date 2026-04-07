@@ -197,7 +197,14 @@
                   <td>
                     <div class="food-info">
                       <img v-if="food.image" :src="resolveImageUrl(food.image)" alt="Food image" class="food-thumbnail" />
-                      <div v-else class="food-icon-placeholder">{{ getFoodIcon(food.category) }}</div>
+                      <div v-else class="food-icon-placeholder">
+                        <svg v-if="food.category === 'rice'" class="food-category-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"></path><path d="M5 12a7 7 0 0 0 14 0"></path></svg>
+                        <svg v-else-if="food.category === 'main'" class="food-category-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"></path><path d="M5 11V9a7 7 0 0 1 14 0v2"></path><path d="M7 11v2"></path><path d="M17 11v2"></path></svg>
+                        <svg v-else-if="food.category === 'side'" class="food-category-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16"></path><path d="M6 10a6 6 0 0 0 12 0"></path><path d="M8 10v2"></path><path d="M12 10v3"></path><path d="M16 10v2"></path></svg>
+                        <svg v-else-if="food.category === 'drink'" class="food-category-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 8a4 4 0 0 1-8 0L8 3z"></path><path d="M12 11v8"></path><path d="M9 19h6"></path></svg>
+                        <svg v-else-if="food.category === 'dessert'" class="food-category-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><path d="M6 20l2-8h8l2 8"></path><path d="M9 12V9a3 3 0 0 1 6 0v3"></path></svg>
+                        <svg v-else class="food-category-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"></path><path d="M5 12a7 7 0 0 0 14 0"></path></svg>
+                      </div>
                       <span class="food-name">{{ food.name }}</span>
                     </div>
                   </td>
@@ -417,16 +424,6 @@ export default {
     }
   },
   methods: {
-    getFoodIcon(category) {
-      const icons = {
-        rice: '🍚',
-        main: '🍖',
-        side: '🥗',
-        drink: '🥤',
-        dessert: '🍰'
-      }
-      return icons[category] || '🍽️'
-    },
     openPackageModal() {
       this.editingPackage = null
       this.packageForm = { name: '', price: 0, description: '', maxPax: 100, category: 'basic' }
@@ -971,7 +968,10 @@ td {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+}
+
+.food-category-icon {
+  color: #64748b;
 }
 
 .category-pill {
