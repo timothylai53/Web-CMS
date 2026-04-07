@@ -100,6 +100,34 @@
               </option>
             </select>
           </div>
+
+          <div v-if="selectedPackageForAdd" class="quick-search-row">
+            <div class="search-wrapper">
+              <input
+                type="text"
+                v-model="foodSearch"
+                placeholder="Search by food name..."
+                class="form-input-compact"
+              />
+            </div>
+            <div class="select-wrapper">
+              <select v-model="foodCategoryFilter" class="form-select-compact">
+                <option value="all">All Categories</option>
+                <option value="rice">Rice</option>
+                <option value="main">Main Dish</option>
+                <option value="side">Side Dish</option>
+                <option value="drink">Drink</option>
+                <option value="dessert">Dessert</option>
+              </select>
+            </div>
+            <div class="select-wrapper">
+              <select v-model="foodAvailabilityFilter" class="form-select-compact">
+                <option value="all">All Status</option>
+                <option value="available">Available</option>
+                <option value="unavailable">Unavailable</option>
+              </select>
+            </div>
+          </div>
           
           <div v-if="selectedPackageForAdd" class="quick-add-container">
             <div class="quick-add-row">
@@ -121,6 +149,14 @@
                   <option value="dessert">Dessert</option>
                 </select>
               </div>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  v-model="newFood.image"
+                  placeholder="Image URL (optional)"
+                  class="form-input-compact"
+                />
+              </div>
               <button 
                 @click="saveNewFood" 
                 class="btn-quick-add"
@@ -137,6 +173,7 @@
             <table>
               <thead>
                 <tr>
+                  <th>No.</th>
                   <th>Item Name</th>
                   <th>Category</th>
                   <th>Availability</th>
@@ -145,23 +182,27 @@
               </thead>
               <tbody>
                 <tr v-if="!selectedPackageForAdd">
-                  <td colspan="4" class="empty-cell">
+                  <td colspan="5" class="empty-cell">
                     <div class="empty-state-small">
                       Please select a package above to manage its food items.
                     </div>
                   </td>
                 </tr>
                 <tr v-else-if="filteredFoods.length === 0">
-                  <td colspan="4" class="empty-cell">
+                  <td colspan="5" class="empty-cell">
                      <div class="empty-state-small">
                       No items found in this package. Add one above!
                     </div>
                   </td>
                 </tr>
-                <tr v-for="food in filteredFoods" :key="food._id || food.id">
+                <tr v-for="(food, index) in filteredFoods" :key="food._id || food.id">
+                  <td>
+                    <span class="item-number">{{ index + 1 }}</span>
+                  </td>
                   <td>
                     <div class="food-info">
-                      <div class="food-icon-placeholder">{{ getFoodIcon(food.category) }}</div>
+                      <img v-if="food.image" :src="resolveImageUrl(food.image)" alt="Food image" class="food-thumbnail" />
+                      <div v-else class="food-icon-placeholder">{{ getFoodIcon(food.category) }}</div>
                       <span class="food-name">{{ food.name }}</span>
                     </div>
                   </td>
@@ -275,6 +316,11 @@
               </div>
 
               <div class="form-group">
+                <label>Image URL (optional)</label>
+                <input v-model="foodForm.image" type="text" class="form-input" placeholder="https://... or /uploads/..." />
+              </div>
+
+              <div class="form-group">
                 <label>Available in Packages</label>
                 <div class="checkbox-group">
                   <label v-for="pkg in packages" :key="pkg._id || pkg.id" class="checkbox-label">
@@ -321,13 +367,18 @@ export default {
       foodForm: {
         name: '',
         category: 'main',
+        image: '',
         packageIds: []
       },
       // Using only quick add for foods now for cleaner UI
       selectedPackageForAdd: '', 
+      foodSearch: '',
+      foodCategoryFilter: 'all',
+      foodAvailabilityFilter: 'all',
       newFood: {
         name: '',
         category: '',
+        image: '',
         available: true
       }
     }
@@ -345,9 +396,25 @@ export default {
       if (!this.selectedPackageForAdd) {
         return []
       }
-      return this.foods.filter(food => 
-        food.packageIds && food.packageIds.includes(this.selectedPackageForAdd)
-      )
+      const keyword = this.foodSearch.trim().toLowerCase()
+      return this.foods
+        .filter(food => {
+          const selectedId = String(this.selectedPackageForAdd)
+          return (food.packageIds || []).some(pkgId => String(pkgId?._id || pkgId?.id || pkgId) === selectedId)
+        })
+        .filter(food => {
+          if (!keyword) return true
+          return String(food.name || '').toLowerCase().includes(keyword)
+        })
+        .filter(food => {
+          if (this.foodCategoryFilter === 'all') return true
+          return food.category === this.foodCategoryFilter
+        })
+        .filter(food => {
+          if (this.foodAvailabilityFilter === 'all') return true
+          if (this.foodAvailabilityFilter === 'available') return !!food.available
+          return !food.available
+        })
     }
   },
   methods: {
@@ -404,6 +471,7 @@ export default {
         this.foodForm = { 
             name: food.name,
             category: food.category,
+        image: food.image || '',
             packageIds: food.packageIds ? [...food.packageIds] : []
         }
         this.showAddFood = true
@@ -411,7 +479,7 @@ export default {
     closeFoodModal() {
         this.showAddFood = false
         this.editingFood = null
-        this.foodForm = { name: '', category: 'main', packageIds: [] }
+      this.foodForm = { name: '', category: 'main', image: '', packageIds: [] }
     },
     async saveFood() {
         const menuStore = useMenuStore()
@@ -457,10 +525,23 @@ export default {
         })
         
         // Reset form
-        this.newFood = { name: '', category: '', available: true }
+        this.newFood = { name: '', category: '', image: '', available: true }
       } catch (error) {
         alert('Failed to add food item.')
       }
+    },
+    resolveImageUrl(imagePath) {
+      if (!imagePath) return ''
+      if (imagePath.startsWith('http') || imagePath.startsWith('data:')) {
+        return imagePath
+      }
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+      const hostBase = apiUrl.replace(/\/api\/?$/, '')
+      let normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`
+      if (normalizedPath.startsWith('/uploads/')) {
+        normalizedPath = `/api${normalizedPath}`
+      }
+      return `${hostBase}${normalizedPath}`
     }
   },
   async mounted() {
@@ -753,6 +834,16 @@ export default {
   border: 1px dashed #cbd5e1;
 }
 
+.quick-search-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.search-wrapper {
+  flex: 2;
+}
+
 .quick-add-row {
   display: flex;
   gap: 12px;
@@ -820,6 +911,24 @@ td {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.food-thumbnail {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.item-number {
+  display: inline-flex;
+  min-width: 24px;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  color: #475569;
 }
 
 .food-icon-placeholder {
@@ -1034,6 +1143,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 @media (max-width: 768px) {
   .admin-content { margin-left: 0; width: 100%; padding: 16px; padding-bottom: 80px; }
   .packages-grid { grid-template-columns: 1fr; }
+  .quick-search-row { flex-direction: column; }
   .quick-add-row { flex-direction: column; }
   .btn-quick-add { width: 100%; }
 }
