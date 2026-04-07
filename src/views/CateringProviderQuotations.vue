@@ -65,7 +65,9 @@
                 <tr v-if="filteredQuotations.length === 0">
                   <td colspan="7" class="empty-cell">
                     <div class="empty-state">
-                      <div class="empty-icon">📂</div>
+                      <div class="empty-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path></svg>
+                      </div>
                       <p>No quotations found matching your filter.</p>
                     </div>
                   </td>
@@ -85,9 +87,18 @@
                   </td>
                   <td>
                     <div class="event-info">
-                      <div class="event-date">📅 {{ formatDate(quotation.eventDate) }}</div>
-                      <div class="event-guests">👥 {{ quotation.numberOfGuests }} Guests</div>
-                      <div class="event-location">📍 {{ truncateText(quotation.eventLocation || 'TBA', 20) }}</div>
+                      <div class="event-row event-date">
+                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>{{ formatDate(quotation.eventDate) }}</span>
+                      </div>
+                      <div class="event-row event-guests">
+                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>{{ quotation.numberOfGuests }} Guests</span>
+                      </div>
+                      <div class="event-row event-location">
+                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span>{{ truncateText(quotation.eventLocation || 'TBA', 20) }}</span>
+                      </div>
                     </div>
                   </td>
                   <td class="package-name">{{ quotation.packageName || 'Custom Package' }}</td>
@@ -609,10 +620,23 @@ td {
   color: #64748b;
 }
 
-.event-info div {
+.event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: #475569;
-  margin-bottom: 2px;
+}
+
+.event-icon {
+  color: #64748b;
+  flex-shrink: 0;
 }
 
 .status-badge {
@@ -660,7 +684,12 @@ td {
   color: #94a3b8;
 }
 
-.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty-icon {
+  margin-bottom: 10px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: center;
+}
 
 /* Modal */
 .modal-overlay {

@@ -83,9 +83,18 @@
                   </td>
                   <td>
                     <div class="event-info">
-                      <div class="event-date">📅 {{ formatDate(order.eventDate) }}</div>
-                      <div class="event-time">⏰ {{ order.eventTime || 'TBA' }}</div>
-                      <div class="event-location">📍 {{ truncateText(order.location || 'TBA', 20) }}</div>
+                      <div class="event-row event-date">
+                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>{{ formatDate(order.eventDate) }}</span>
+                      </div>
+                      <div class="event-row event-time">
+                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <span>{{ order.eventTime || 'TBA' }}</span>
+                      </div>
+                      <div class="event-row event-location">
+                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span>{{ truncateText(order.location || 'TBA', 20) }}</span>
+                      </div>
                     </div>
                   </td>
                   <td class="amount">RM {{ order.totalAmount?.toFixed(2) || '0.00' }}</td>
@@ -578,10 +587,23 @@ td {
   color: #64748b;
 }
 
-.event-info div {
+.event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: #475569;
-  margin-bottom: 2px;
+}
+
+.event-icon {
+  color: #64748b;
+  flex-shrink: 0;
 }
 
 .amount {
