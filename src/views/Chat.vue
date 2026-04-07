@@ -321,11 +321,22 @@ export default {
       return conv.lastMessage.message
     },
     getFileUrl(fileUrl) {
-        if (!fileUrl) return ''
-        const apiStr = import.meta.env.VITE_API_URL;
-        const baseUrl = apiStr ? apiStr.replace('/api', '') : 'http://localhost:5000';
-        return `${baseUrl}${fileUrl}`;
-      },
+      if (!fileUrl) return ''
+      // If it's already a full URL, just return it
+      if (fileUrl.startsWith('http')) return fileUrl;
+      
+      const apiStr = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      // Clean up the URL format (removes trailing slash from apiStr, ensures fileUrl starts with slash)
+      let base = apiStr.replace(/\/$/, '');
+      let path = fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl;
+      
+      // If path already contains /api, remove it so we don't end up with /api/api/
+      if (path.startsWith('/api/')) {
+        path = path.replace('/api', '');
+      }
+      
+      return `${base}${path}`;
+    },
     formatTime(dateStr) {
       if (!dateStr) return ''
       const date = new Date(dateStr)
