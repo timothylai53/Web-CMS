@@ -127,7 +127,7 @@
 class="selection-card" :class="{ selected: selectedRice.includes(rice.name), disabled: selectedRice.length >= 2 && !selectedRice.includes(rice.name), dim: selectedRice.length > 0 && !selectedRice.includes(rice.name) }">
               <input type="checkbox" :value="rice.name" v-model="selectedRice" :id="'rice-' + rice.id" class="selection-checkbox" />
               <div v-if="rice.image" class="selection-image">
-                <img :src="rice.image" :alt="rice.name" />
+                <img :src="resolveFoodImage(rice.image)" :alt="rice.name" />
               </div>
               <div class="selection-label">
                 <div class="selection-check"></div>
@@ -163,7 +163,7 @@ class="selection-card" :class="{ selected: selectedRice.includes(rice.name), dis
 class="selection-card" :class="{ selected: selectedFoods.includes(food.name), disabled: selectedFoods.length >= 8 && !selectedFoods.includes(food.name), dim: selectedFoods.length > 0 && !selectedFoods.includes(food.name) }">
               <input type="checkbox" :value="food.name" v-model="selectedFoods" :id="'food-' + food.id" class="selection-checkbox" />
               <div v-if="food.image" class="selection-image">
-                <img :src="food.image" :alt="food.name" />
+                <img :src="resolveFoodImage(food.image)" :alt="food.name" />
               </div>
               <div class="selection-label">
                 <div class="selection-check"></div>
@@ -199,7 +199,7 @@ class="selection-card" :class="{ selected: selectedFoods.includes(food.name), di
 class="selection-card" :class="{ selected: selectedSides.includes(side.name), disabled: selectedSides.length >= 5 && !selectedSides.includes(side.name), dim: selectedSides.length > 0 && !selectedSides.includes(side.name) }">
               <input type="checkbox" :value="side.name" v-model="selectedSides" :id="'side-' + (side.id || side._id)" class="selection-checkbox" />
               <div v-if="side.image" class="selection-image">
-                <img :src="side.image" :alt="side.name" />
+                <img :src="resolveFoodImage(side.image)" :alt="side.name" />
               </div>
               <div class="selection-label">
                 <div class="selection-check"></div>
@@ -234,7 +234,7 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             <label v-for="drink in availableDrinks" :key="drink.id || drink._id" class="selection-card" :class="{ selected: selectedDrinks.includes(drink.name), disabled: selectedDrinks.length >= 3 && !selectedDrinks.includes(drink.name), dim: selectedDrinks.length > 0 && !selectedDrinks.includes(drink.name) }">
               <input type="checkbox" :value="drink.name" v-model="selectedDrinks" :id="'drink-' + (drink.id || drink._id)" class="selection-checkbox" />
               <div v-if="drink.image" class="selection-image">
-                <img :src="drink.image" :alt="drink.name" />
+                <img :src="resolveFoodImage(drink.image)" :alt="drink.name" />
               </div>
               <div class="selection-label">
                 <div class="selection-check"></div>
@@ -269,7 +269,7 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             <label v-for="dessert in availableDesserts" :key="dessert.id || dessert._id" class="selection-card" :class="{ selected: selectedDesserts.includes(dessert.name), disabled: selectedDesserts.length >= 3 && !selectedDesserts.includes(dessert.name), dim: selectedDesserts.length > 0 && !selectedDesserts.includes(dessert.name) }">
               <input type="checkbox" :value="dessert.name" v-model="selectedDesserts" :id="'dessert-' + (dessert.id || dessert._id)" class="selection-checkbox" />
               <div v-if="dessert.image" class="selection-image">
-                <img :src="dessert.image" :alt="dessert.name" />
+                <img :src="resolveFoodImage(dessert.image)" :alt="dessert.name" />
               </div>
               <div class="selection-label">
                 <div class="selection-check"></div>
@@ -458,6 +458,19 @@ export default {
     }
   },
   methods: {
+    resolveFoodImage(imagePath) {
+      if (!imagePath) return ''
+      if (imagePath.startsWith('http') || imagePath.startsWith('data:')) {
+        return imagePath
+      }
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+      const hostBase = apiUrl.replace(/\/api\/?$/, '')
+      let normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`
+      if (normalizedPath.startsWith('/uploads/')) {
+        normalizedPath = `/api${normalizedPath}`
+      }
+      return `${hostBase}${normalizedPath}`
+    },
     showNotification(message, type = 'success') {
       this.notification.message = message
       this.notification.type = type

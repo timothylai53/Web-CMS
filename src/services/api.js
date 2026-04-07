@@ -50,6 +50,9 @@ export const menuAPI = {
     const params = providerId ? { providerId } : {};
     return api.get('/menu/foods/available', { params });
   },
+  uploadFoodImage: (formData) => api.post('/menu/foods/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   createFood: (data) => api.post('/menu/foods', data),
   updateFood: (id, data) => api.put(`/menu/foods/${id}`, data),
   deleteFood: (id) => api.delete(`/menu/foods/${id}`)

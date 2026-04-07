@@ -1,8 +1,59 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { Package, FoodItem } from '../models/Menu.js';
 import { authenticate, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const foodUploadsDir = path.join(__dirname, '..', 'uploads', 'foods');
+if (!fs.existsSync(foodUploadsDir)) {
+  fs.mkdirSync(foodUploadsDir, { recursive: true });
+}
+
+const foodImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, foodUploadsDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `food-${uniqueSuffix}${ext}`);
+  }
+});
+
+const foodImageFilter = (req, file, cb) => {
+  const allowedImages = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+  if (allowedImages.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed'), false);
+  }
+};
+
+const uploadFoodImage = multer({
+  storage: foodImageStorage,
+  fileFilter: foodImageFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+router.post('/foods/upload-image', authenticate, isAdmin, uploadFoodImage.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded' });
+    }
+
+    return res.status(201).json({
+      message: 'Food image uploaded successfully',
+      imagePath: `/uploads/foods/${req.file.filename}`
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 // Get all packages (optionally filtered by providerId)
 router.get('/packages', async (req, res) => {

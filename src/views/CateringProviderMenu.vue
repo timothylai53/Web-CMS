@@ -150,12 +150,7 @@
                 </select>
               </div>
               <div class="input-wrapper">
-                <input
-                  type="text"
-                  v-model="newFood.image"
-                  placeholder="Image URL (optional)"
-                  class="form-input-compact"
-                />
+                <input type="file" accept="image/*" @change="onQuickFoodImageChange" class="form-input-compact" />
               </div>
               <button 
                 @click="saveNewFood" 
@@ -316,8 +311,9 @@
               </div>
 
               <div class="form-group">
-                <label>Image URL (optional)</label>
-                <input v-model="foodForm.image" type="text" class="form-input" placeholder="https://... or /uploads/..." />
+                <label>Item Image (optional)</label>
+                <input type="file" accept="image/*" @change="onFoodImageChange" class="form-input" />
+                <small v-if="foodForm.image" class="helper-text">Current image attached.</small>
               </div>
 
               <div class="form-group">
@@ -346,6 +342,7 @@
 <script>
 import { useMenuStore } from '@/stores/menu'
 import { useAuthStore } from '@/stores/auth'
+import { menuAPI } from '@/services/api'
 import Navbar from '@/components/Navbar.vue'
 
 export default {
@@ -368,6 +365,7 @@ export default {
         name: '',
         category: 'main',
         image: '',
+        imageFile: null,
         packageIds: []
       },
       // Using only quick add for foods now for cleaner UI
@@ -379,6 +377,7 @@ export default {
         name: '',
         category: '',
         image: '',
+        imageFile: null,
         available: true
       }
     }
@@ -472,6 +471,7 @@ export default {
             name: food.name,
             category: food.category,
         image: food.image || '',
+        imageFile: null,
             packageIds: food.packageIds ? [...food.packageIds] : []
         }
         this.showAddFood = true
@@ -479,15 +479,39 @@ export default {
     closeFoodModal() {
         this.showAddFood = false
         this.editingFood = null
-      this.foodForm = { name: '', category: 'main', image: '', packageIds: [] }
+        this.foodForm = { name: '', category: 'main', image: '', imageFile: null, packageIds: [] }
+    },
+    onFoodImageChange(event) {
+      const file = event.target.files?.[0] || null
+      this.foodForm.imageFile = file
+    },
+    onQuickFoodImageChange(event) {
+      const file = event.target.files?.[0] || null
+      this.newFood.imageFile = file
+    },
+    async uploadImageFile(file) {
+      if (!file) return ''
+      const formData = new FormData()
+      formData.append('image', file)
+      const response = await menuAPI.uploadFoodImage(formData)
+      return response?.data?.imagePath || ''
     },
     async saveFood() {
         const menuStore = useMenuStore()
         try {
+            const payload = {
+              name: this.foodForm.name,
+              category: this.foodForm.category,
+              packageIds: this.foodForm.packageIds,
+              image: this.foodForm.image || null
+            }
+            if (this.foodForm.imageFile) {
+              payload.image = await this.uploadImageFile(this.foodForm.imageFile)
+            }
             if (this.editingFood) {
-                await menuStore.updateFoodItem(this.editingFood._id || this.editingFood.id, this.foodForm)
+                await menuStore.updateFoodItem(this.editingFood._id || this.editingFood.id, payload)
             } else {
-                await menuStore.addFoodItem(this.foodForm)
+                await menuStore.addFoodItem(payload)
             }
             this.closeFoodModal()
         } catch (error) {
@@ -518,14 +542,22 @@ export default {
       const authStore = useAuthStore()
       
       try {
+        let imagePath = this.newFood.image || null
+        if (this.newFood.imageFile) {
+          imagePath = await this.uploadImageFile(this.newFood.imageFile)
+        }
+
         await menuStore.addFoodItem({
-          ...this.newFood,
+          name: this.newFood.name,
+          category: this.newFood.category,
+          image: imagePath,
+          available: true,
           packageIds: [this.selectedPackageForAdd],
           providerId: authStore.user.id
         })
         
         // Reset form
-        this.newFood = { name: '', category: '', image: '', available: true }
+        this.newFood = { name: '', category: '', image: '', imageFile: null, available: true }
       } catch (error) {
         alert('Failed to add food item.')
       }
