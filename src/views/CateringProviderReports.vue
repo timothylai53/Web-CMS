@@ -12,7 +12,7 @@
           </div>
           <div class="hero-actions">
             <button @click="exportToPdf" class="btn-primary-outline">
-              <span class="icon">📥</span> Export PDF
+              <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span> Export PDF
             </button>
           </div>
         </div>
@@ -39,28 +39,28 @@
       <!-- Stats Overview -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon blue">💰</div>
+          <div class="stat-icon blue"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
           <div class="stat-info">
             <span class="label">Total Revenue</span>
             <span class="value">RM {{ totalSales.toFixed(2) }}</span>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon purple">📦</div>
+          <div class="stat-icon purple"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" y1="22" x2="12" y2="12"></line></svg></div>
           <div class="stat-info">
             <span class="label">Total Orders</span>
             <span class="value">{{ totalOrders }}</span>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon green">📈</div>
+          <div class="stat-icon green"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg></div>
           <div class="stat-info">
             <span class="label">Avg. Order Value</span>
             <span class="value">RM {{ averageOrderValue.toFixed(2) }}</span>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon orange">✅</div>
+          <div class="stat-icon orange"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
           <div class="stat-info">
             <span class="label">Completed</span>
             <span class="value">{{ completedOrders }}</span>
@@ -552,6 +552,12 @@ export default {
   border-color: #cbd5e1;
 }
 
+.btn-primary-outline .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Filters */
 .filter-bar {
   background: white;
@@ -666,7 +672,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
 }
 
 .stat-icon.blue { background: #eff6ff; color: #3b82f6; }

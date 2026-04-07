@@ -74,7 +74,9 @@
           </div>
 
           <div v-if="eventsForSelectedDate.length === 0" class="empty-state-card">
-            <div class="empty-icon">📅</div>
+            <div class="empty-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </div>
             <p>No events scheduled for this date.</p>
           </div>
 
@@ -90,19 +92,19 @@
               
               <div class="event-info-grid">
                 <div class="info-item">
-                  <span class="icon">📦</span>
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline><polyline points="7.5 19.79 7.5 14.6 3 12"></polyline><polyline points="21 12 16.5 14.6 16.5 19.79"></polyline><polyline points="12 22.08 12 16.9 16.5 14.3"></polyline><polyline points="12 16.9 7.5 14.3"></polyline><polyline points="12 6.81 12 12"></polyline></svg></span>
                   <span class="text">{{ event.packageName }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="icon">🕐</span>
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
                   <span class="text">{{ event.eventTime || 'Not specified' }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="icon">👥</span>
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
                   <span class="text">{{ event.numberOfPax }} Pax</span>
                 </div>
                 <div class="info-item full-width">
-                  <span class="icon">📍</span>
+                  <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>
                   <span class="text">{{ event.location || 'Not specified' }}</span>
                 </div>
               </div>
@@ -120,7 +122,7 @@
 
               <div class="event-footer-actions">
                 <button @click="viewOrderDetails(event)" class="btn-link">
-                  View Full Details →
+                  View Full Details
                 </button>
               </div>
             </div>
@@ -550,7 +552,12 @@ export default {
   color: #94a3b8;
 }
 
-.empty-icon { font-size: 40px; margin-bottom: 16px; display: block; }
+.empty-icon {
+  margin-bottom: 16px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: center;
+}
 
 .events-list-stack {
   display: flex;
@@ -626,7 +633,14 @@ export default {
 
 .info-item.full-width { grid-column: 1 / -1; }
 
-.info-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.info-item .icon {
+  width: 20px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
 .info-item .text { font-size: 14px; color: #334155; font-weight: 500; }
 
 .event-contact-box {

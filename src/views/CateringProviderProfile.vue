@@ -384,7 +384,9 @@
         <div class="status-cards-grid">
           <div :class="['status-card', getDocStatus('businessRegistration')]">
             <div class="status-icon-wrapper">
-               <span class="status-emoji">{{ getDocIcon('businessRegistration') }}</span>
+               <span class="status-emoji" v-if="getDocStatus('businessRegistration') === 'warning'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
+               <span class="status-emoji" v-else-if="getDocStatus('businessRegistration') === 'verified'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+               <span class="status-emoji" v-else><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
             </div>
             <div class="status-details">
                <strong>Business Registration</strong>
@@ -393,7 +395,9 @@
           </div>
            <div :class="['status-card', getDocStatus('foodLicense')]">
              <div class="status-icon-wrapper">
-               <span class="status-emoji">{{ getDocIcon('foodLicense') }}</span>
+               <span class="status-emoji" v-if="getDocStatus('foodLicense') === 'warning'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
+               <span class="status-emoji" v-else-if="getDocStatus('foodLicense') === 'verified'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+               <span class="status-emoji" v-else><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
              </div>
             <div class="status-details">
                <strong>Food License</strong>
@@ -402,7 +406,9 @@
           </div>
            <div :class="['status-card', getDocStatus('bankStatement')]">
              <div class="status-icon-wrapper">
-               <span class="status-emoji">{{ getDocIcon('bankStatement') }}</span>
+               <span class="status-emoji" v-if="getDocStatus('bankStatement') === 'warning'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
+               <span class="status-emoji" v-else-if="getDocStatus('bankStatement') === 'verified'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+               <span class="status-emoji" v-else><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
              </div>
             <div class="status-details">
                <strong>Bank Statement</strong>
@@ -411,7 +417,9 @@
           </div>
            <div :class="['status-card', getDocStatus('halalCertificate')]">
              <div class="status-icon-wrapper">
-                <span class="status-emoji">{{ getDocIcon('halalCertificate') }}</span>
+                <span class="status-emoji" v-if="getDocStatus('halalCertificate') === 'warning'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
+                <span class="status-emoji" v-else-if="getDocStatus('halalCertificate') === 'verified'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+                <span class="status-emoji" v-else><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
              </div>
             <div class="status-details">
                <strong>Halal Certificate</strong>
@@ -423,7 +431,7 @@
         <div class="divider"></div>
 
         <h3 class="subsection-title">Upload Documents</h3>
-        <p class="helper-text mb-4">⚠️ All document changes require superadmin approval</p>
+        <p class="helper-text mb-4">All document changes require superadmin approval</p>
         
         <div class="upload-grid">
               <!-- SSM / Business Reg -->
@@ -829,11 +837,6 @@ export default {
       if (this.documents[docType].pending) return 'warning'
       if (this.documents[docType].current) return 'verified'
       return 'missing'
-    },
-    getDocIcon(docType) {
-      if (this.documents[docType].pending) return '⏳'
-      if (this.documents[docType].current) return '✅'
-      return '❌'
     },
     getDocStatusText(docType) {
       if (this.documents[docType].pending) return 'Pending Approval'
@@ -1396,7 +1399,10 @@ export default {
 }
 
 .status-emoji {
-  font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
 }
 
 .status-details strong {
