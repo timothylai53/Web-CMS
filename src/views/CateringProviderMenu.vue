@@ -377,7 +377,7 @@ export default {
         try {
           await menuStore.deletePackage(id)
         } catch (error) {
-          alert('Failed to delete package.')
+          alert(error.response?.data?.message || 'Failed to delete package.')
         }
       }
     },
@@ -392,7 +392,7 @@ export default {
         }
         this.closePackageModal()
       } catch (error) {
-        alert('Failed to save package.')
+        alert(error.response?.data?.message || 'Failed to save package.')
       }
     },
     closePackageModal() {
@@ -418,10 +418,12 @@ export default {
         try {
             if (this.editingFood) {
                 await menuStore.updateFoodItem(this.editingFood._id || this.editingFood.id, this.foodForm)
+            } else {
+                await menuStore.addFoodItem(this.foodForm)
             }
             this.closeFoodModal()
         } catch (error) {
-            alert('Failed to save food.')
+            alert(error.response?.data?.message || 'Failed to save food.')
         }
     },
     async toggleAvailability(id, available) {
@@ -438,7 +440,7 @@ export default {
       try {
         await menuStore.deleteFoodItem(food._id || food.id)
       } catch (error) {
-        alert('Failed to delete food item.')
+        alert(error.response?.data?.message || 'Failed to delete food item.')
       }
     },
     async saveNewFood() {
