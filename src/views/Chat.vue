@@ -321,9 +321,11 @@ export default {
       return conv.lastMessage.message
     },
     getFileUrl(fileUrl) {
-      if (!fileUrl) return ''
-      return `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : '${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}'}${fileUrl}`
-    },
+        if (!fileUrl) return ''
+        const apiStr = import.meta.env.VITE_API_URL;
+        const baseUrl = apiStr ? apiStr.replace('/api', '') : 'http://localhost:5000';
+        return `${baseUrl}${fileUrl}`;
+      },
     formatTime(dateStr) {
       if (!dateStr) return ''
       const date = new Date(dateStr)
