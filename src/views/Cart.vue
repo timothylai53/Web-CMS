@@ -40,10 +40,13 @@
                 <p class="description">{{ item.description }}</p>
                 
                 <!-- Selected Items Summary -->
-                <div class="selected-items-tags">
-                  <span v-for="(food, index) in item.foods" :key="'food-'+index" class="tag">{{ food }}</span>
-                  <span v-for="(drink, index) in item.drinks" :key="'drink-'+index" class="tag">{{ drink }}</span>
-                  <span v-for="(cake, index) in item.cakes" :key="'cake-'+index" class="tag">{{ cake }}</span>
+                <div class="selected-items-grouped">
+                  <div v-for="group in getItemCategoryGroups(item)" :key="group.key" class="category-group">
+                    <div class="category-title">{{ group.label }}</div>
+                    <div class="selected-items-tags">
+                      <span v-for="(entry, index) in group.items" :key="`${group.key}-${index}`" class="tag">{{ entry }}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div v-if="item.remark" class="remark-box">
@@ -138,6 +141,28 @@ export default {
     }
   },
   methods: {
+    getItemCategoryGroups(item) {
+      const groups = [
+        { key: 'rice', label: 'Rice', items: item.rice || [] },
+        { key: 'mainDishes', label: 'Main Dishes', items: item.mainDishes || [] },
+        { key: 'sides', label: 'Side Dishes', items: item.sides || [] },
+        { key: 'drinks', label: 'Beverages', items: item.drinks || [] },
+        { key: 'desserts', label: 'Desserts', items: item.desserts || item.cakes || [] }
+      ]
+
+      const hasStructuredGroups = groups.some(group => Array.isArray(group.items) && group.items.length > 0)
+
+      if (hasStructuredGroups) {
+        return groups.filter(group => Array.isArray(group.items) && group.items.length > 0)
+      }
+
+      const fallbackFoods = item.foods || []
+      if (fallbackFoods.length > 0) {
+        return [{ key: 'foods', label: 'Selected Foods', items: fallbackFoods }]
+      }
+
+      return []
+    },
     removeItem(itemId) {
       const cartStore = useCartStore()
       if (confirm('Remove this item from cart?')) {
@@ -347,7 +372,27 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.selected-items-grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 15px;
+}
+
+.category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .tag {
@@ -532,7 +577,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #06b6d4;
+  background: #16a34a;
   color: white;
   padding: 14px;
   border-radius: 10px;
@@ -544,9 +589,9 @@ export default {
 }
 
 .btn-checkout:hover {
-  background: #0891b2;
+  background: #15803d;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
 }
 
 .btn-continue {
