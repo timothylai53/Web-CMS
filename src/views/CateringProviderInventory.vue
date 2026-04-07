@@ -792,6 +792,8 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import Navbar from '@/components/Navbar.vue';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default {
   name: 'CateringProviderInventory',
   components: {
@@ -895,7 +897,7 @@ export default {
     
     const loadStatistics = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/inventory/statistics', {
+        const response = await axios.get(API_URL + '/inventory/statistics', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         statistics.value = response.data;
@@ -913,7 +915,7 @@ export default {
           category: filterCategory.value
         };
         
-        const response = await axios.get('http://localhost:5000/api/inventory/items', {
+        const response = await axios.get(API_URL + '/inventory/items', {
           params,
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
@@ -928,7 +930,7 @@ export default {
     
     const loadLowStockAlerts = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/inventory/alerts/low-stock', {
+        const response = await axios.get(API_URL + '/inventory/alerts/low-stock', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         lowStockItems.value = response.data;
@@ -939,7 +941,7 @@ export default {
     
     const loadExpiringItems = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/inventory/alerts/expiring', {
+        const response = await axios.get(API_URL + '/inventory/alerts/expiring', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         expiringItems.value = response.data;
@@ -968,14 +970,14 @@ export default {
         
         if (editingItem.value) {
           await axios.put(
-            `http://localhost:5000/api/inventory/items/${editingItem.value._id}`,
+            `${API_URL}/inventory/items/${editingItem.value._id}`,
             itemData,
             { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
           );
           alert('Item updated successfully');
         } else {
           await axios.post(
-            'http://localhost:5000/api/inventory/items',
+            API_URL + '/inventory/items',
             itemData,
             { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
           );
@@ -1130,7 +1132,7 @@ export default {
           try {
             console.log('Sending item to backend:', JSON.stringify(item, null, 2));
             await axios.post(
-              'http://localhost:5000/api/inventory/items',
+              API_URL + '/inventory/items',
               item,
               { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
             );
@@ -1216,7 +1218,7 @@ export default {
         }
         
         await axios.post(
-          `http://localhost:5000/api/inventory/items/${adjustingItem.value._id}/adjust-stock`,
+          `${API_URL}/inventory/items/${adjustingItem.value._id}/adjust-stock`,
           {
             adjustment,
             reason: stockAdjustment.value.reason
@@ -1242,7 +1244,7 @@ export default {
       
       try {
         await axios.delete(
-          `http://localhost:5000/api/inventory/items/${item._id}`,
+          `${API_URL}/inventory/items/${item._id}`,
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
         alert('Item deleted successfully');

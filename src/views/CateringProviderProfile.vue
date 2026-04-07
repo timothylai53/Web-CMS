@@ -621,6 +621,8 @@ import axios from 'axios'
 import Navbar from '@/components/Navbar.vue'
 import { useAuthStore } from '@/stores/auth'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default {
   name: 'CateringProviderProfile',
   components: {
@@ -708,7 +710,7 @@ export default {
         console.log('Loading profile...')
         console.log('Auth headers:', this.getAuthHeaders())
         
-        const response = await axios.get('http://localhost:5000/api/provider/profile', this.getAuthHeaders())
+        const response = await axios.get(API_URL + '/provider/profile', this.getAuthHeaders())
         
         console.log('Profile loaded:', response.data)
         
@@ -807,7 +809,7 @@ export default {
         reader.onload = async (e) => {
           try {
             // Upload document with pending approval status
-            await axios.post('http://localhost:5000/api/provider/upload-document', {
+            await axios.post(API_URL + '/provider/upload-document', {
               documentType: docType,
               documentData: e.target.result
             }, this.getAuthHeaders())
@@ -847,7 +849,7 @@ export default {
     // Save Methods
     async saveBranding() {
       try {
-        await axios.put('http://localhost:5000/api/provider/profile/branding', {
+        await axios.put(API_URL + '/provider/profile/branding', {
           ...this.profileData,
           pendingChanges: this.pendingChanges
         }, this.getAuthHeaders())
@@ -861,7 +863,7 @@ export default {
     },
     async saveOperations() {
       try {
-        await axios.put('http://localhost:5000/api/provider/profile/operations', {
+        await axios.put(API_URL + '/provider/profile/operations', {
           serviceAreaType: this.profileData.serviceAreaType,
           deliveryRadius: this.profileData.deliveryRadius,
           serviceLocations: this.profileData.serviceLocations,
@@ -880,7 +882,7 @@ export default {
     },
     async saveFinancial() {
       try {
-        await axios.put('http://localhost:5000/api/provider/profile/financial', {
+        await axios.put(API_URL + '/provider/profile/financial', {
           bankAccount: this.profileData.bankAccount,
           bankName: this.profileData.bankName,
           accountHolderName: this.profileData.accountHolderName,
@@ -909,7 +911,7 @@ export default {
       }
 
       try {
-        await axios.put('http://localhost:5000/api/provider/change-password', {
+        await axios.put(API_URL + '/provider/change-password', {
           currentPassword: this.securityData.currentPassword,
           newPassword: this.securityData.newPassword
         }, this.getAuthHeaders())

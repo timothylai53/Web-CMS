@@ -322,7 +322,7 @@ export default {
     },
     getFileUrl(fileUrl) {
       if (!fileUrl) return ''
-      return `http://localhost:5000${fileUrl}`
+      return `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : '${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}'}${fileUrl}`
     },
     formatTime(dateStr) {
       if (!dateStr) return ''

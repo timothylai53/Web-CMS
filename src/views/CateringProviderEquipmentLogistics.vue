@@ -547,6 +547,8 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import Navbar from '@/components/Navbar.vue';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default {
   name: 'CateringProviderEquipmentLogistics',
   components: {
@@ -620,7 +622,7 @@ export default {
         const params = {};
         if (filterStatus.value) params.status = filterStatus.value;
         
-        const response = await axios.get('http://localhost:5000/api/inventory/pack-lists', {
+        const response = await axios.get(API_URL + '/inventory/pack-lists', {
           params,
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
@@ -635,7 +637,7 @@ export default {
     
     const loadAvailableEquipment = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/inventory/items', {
+        const response = await axios.get(API_URL + '/inventory/items', {
           params: { itemType: 'equipment' },
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
@@ -667,7 +669,7 @@ export default {
       saving.value = true;
       try {
         await axios.post(
-          'http://localhost:5000/api/inventory/pack-lists',
+          API_URL + '/inventory/pack-lists',
           packListForm.value,
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
@@ -704,7 +706,7 @@ export default {
       saving.value = true;
       try {
         await axios.post(
-          `http://localhost:5000/api/inventory/pack-lists/${checkingOutPackList.value._id}/check-out`,
+          `${API_URL}/inventory/pack-lists/${checkingOutPackList.value._id}/check-out`,
           checkoutForm.value,
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
@@ -782,7 +784,7 @@ export default {
       saving.value = true;
       try {
         await axios.post(
-          `http://localhost:5000/api/inventory/pack-lists/${checkingInPackList.value._id}/check-in`,
+          `${API_URL}/inventory/pack-lists/${checkingInPackList.value._id}/check-in`,
           checkinForm.value,
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
@@ -803,7 +805,7 @@ export default {
       
       try {
         await axios.delete(
-          `http://localhost:5000/api/inventory/pack-lists/${packList._id}`,
+          `${API_URL}/inventory/pack-lists/${packList._id}`,
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
         
