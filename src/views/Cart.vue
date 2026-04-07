@@ -149,19 +149,12 @@ export default {
         { key: 'drinks', label: 'Beverages', items: item.drinks || [] },
         { key: 'desserts', label: 'Desserts', items: item.desserts || item.cakes || [] }
       ]
-
-      const hasStructuredGroups = groups.some(group => Array.isArray(group.items) && group.items.length > 0)
-
-      if (hasStructuredGroups) {
-        return groups.filter(group => Array.isArray(group.items) && group.items.length > 0)
-      }
-
       const fallbackFoods = item.foods || []
       if (fallbackFoods.length > 0) {
-        return [{ key: 'foods', label: 'Selected Foods', items: fallbackFoods }]
+        groups.unshift({ key: 'foods', label: 'Selected Foods', items: fallbackFoods })
       }
 
-      return []
+      return groups.filter(group => Array.isArray(group.items) && group.items.length > 0)
     },
     removeItem(itemId) {
       const cartStore = useCartStore()
