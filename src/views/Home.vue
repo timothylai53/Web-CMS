@@ -285,7 +285,7 @@ export default {
       }
       return 'Contact for details'
     },
-    getServiceAreaText(provider) {
+    selectProvider(provider) {
       // Navigate to menu with provider ID
       this.$router.push({ path: '/menu', query: { providerId: provider._id } })
     },
