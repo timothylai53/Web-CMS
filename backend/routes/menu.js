@@ -11,10 +11,39 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const packageUploadsDir = path.join(__dirname, '..', 'uploads', 'packages');
+if (!fs.existsSync(packageUploadsDir)) {
+  fs.mkdirSync(packageUploadsDir, { recursive: true });
+}
+
 const foodUploadsDir = path.join(__dirname, '..', 'uploads', 'foods');
 if (!fs.existsSync(foodUploadsDir)) {
   fs.mkdirSync(foodUploadsDir, { recursive: true });
 }
+
+const packageImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, packageUploadsDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `package-${uniqueSuffix}${ext}`);
+  }
+});
+
+const imageFilter = (req, file, cb) => {
+  const allowedImages = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+  if (allowedImages.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed'), false);
+  }
+};
+
+const uploadPackageImage = multer({
+  storage: packageImageStorage,
+  fileFilter: imageFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 const foodImageStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, foodUploadsDir),
@@ -26,18 +55,28 @@ const foodImageStorage = multer.diskStorage({
 });
 
 const foodImageFilter = (req, file, cb) => {
-  const allowedImages = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
-  if (allowedImages.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed'), false);
-  }
+  return imageFilter(req, file, cb);
 };
 
 const uploadFoodImage = multer({
   storage: foodImageStorage,
   fileFilter: foodImageFilter,
   limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+router.post('/packages/upload-image', authenticate, isAdmin, uploadPackageImage.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded' });
+    }
+
+    return res.status(201).json({
+      message: 'Package image uploaded successfully',
+      imagePath: `/uploads/packages/${req.file.filename}`
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
 });
 
 router.post('/foods/upload-image', authenticate, isAdmin, uploadFoodImage.single('image'), async (req, res) => {

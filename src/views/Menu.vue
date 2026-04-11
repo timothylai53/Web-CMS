@@ -41,6 +41,8 @@
             @click="selectPackage(pkg)"
           >
             <div class="card-banner">
+              <img v-if="pkg.image" :src="resolvePackageImage(pkg.image)" :alt="pkg.name" class="package-banner-image" />
+              <div v-else class="package-banner-placeholder">Package Preview</div>
               <span class="provider-badge">{{ pkg.providerId?.businessName || 'Provider' }}</span>
             </div>
             
@@ -458,6 +460,9 @@ export default {
     }
   },
   methods: {
+    resolvePackageImage(imagePath) {
+      return this.resolveFoodImage(imagePath)
+    },
     resolveFoodImage(imagePath) {
       if (!imagePath) return ''
       if (imagePath.startsWith('http') || imagePath.startsWith('data:')) {
@@ -841,6 +846,25 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   height: 140px;
   background: #e2e8f0; /* Solid light gray background */
   position: relative;
+}
+
+.package-banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.package-banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
 }
 
 .provider-badge {

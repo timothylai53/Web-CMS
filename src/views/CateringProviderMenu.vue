@@ -53,6 +53,10 @@
 
         <div class="packages-grid">
           <div v-for="pkg in packages" :key="pkg.id || pkg._id" class="package-card">
+            <div class="pkg-image-wrap">
+              <img v-if="pkg.image" :src="resolveImageUrl(pkg.image)" :alt="pkg.name" class="pkg-image" />
+              <div v-else class="pkg-image-placeholder">No Image</div>
+            </div>
             <div class="pkg-header">
               <h4>{{ pkg.name }}</h4>
               <span class="pkg-category-badge">{{ pkg.category }}</span>
@@ -281,6 +285,12 @@
                 <label>Description</label>
                 <textarea v-model="packageForm.description" rows="3" class="form-textarea" placeholder="Describe the offerings..."></textarea>
               </div>
+
+              <div class="form-group">
+                <label>Package Image (optional)</label>
+                <input type="file" accept="image/*" @change="onPackageImageChange" class="form-input" />
+                <small v-if="packageForm.image" class="helper-text">Current image attached.</small>
+              </div>
             </form>
           </div>
 
@@ -368,7 +378,9 @@ export default {
         price: 0,
         description: '',
         maxPax: 100,
-        category: 'basic'
+        category: 'basic',
+        image: '',
+        imageFile: null
       },
       foodForm: {
         name: '',
@@ -428,12 +440,16 @@ export default {
   methods: {
     openPackageModal() {
       this.editingPackage = null
-      this.packageForm = { name: '', price: 0, description: '', maxPax: 100, category: 'basic' }
+      this.packageForm = { name: '', price: 0, description: '', maxPax: 100, category: 'basic', image: '', imageFile: null }
       this.showAddPackage = true
     },
     editPackage(pkg) {
       this.editingPackage = pkg
-      this.packageForm = { ...pkg }
+      this.packageForm = {
+        ...pkg,
+        image: pkg.image || '',
+        imageFile: null
+      }
       this.showAddPackage = true
     },
     async deletePackage(id) {
@@ -450,10 +466,23 @@ export default {
       const menuStore = useMenuStore()
       const authStore = useAuthStore()
       try {
+        const payload = {
+          name: this.packageForm.name,
+          price: this.packageForm.price,
+          description: this.packageForm.description,
+          maxPax: this.packageForm.maxPax,
+          category: this.packageForm.category,
+          image: this.packageForm.image || null
+        }
+
+        if (this.packageForm.imageFile) {
+          payload.image = await this.uploadPackageImageFile(this.packageForm.imageFile)
+        }
+
         if (this.editingPackage) {
-          await menuStore.updatePackage(this.editingPackage._id || this.editingPackage.id, this.packageForm)
+          await menuStore.updatePackage(this.editingPackage._id || this.editingPackage.id, payload)
         } else {
-          await menuStore.addPackage({ ...this.packageForm, providerId: authStore.user.id })
+          await menuStore.addPackage({ ...payload, providerId: authStore.user.id })
         }
         this.closePackageModal()
       } catch (error) {
@@ -463,6 +492,18 @@ export default {
     closePackageModal() {
       this.showAddPackage = false
       this.editingPackage = null
+      this.packageForm = { name: '', price: 0, description: '', maxPax: 100, category: 'basic', image: '', imageFile: null }
+    },
+    onPackageImageChange(event) {
+      const file = event.target.files?.[0] || null
+      this.packageForm.imageFile = file
+    },
+    async uploadPackageImageFile(file) {
+      if (!file) return ''
+      const formData = new FormData()
+      formData.append('image', file)
+      const response = await menuAPI.uploadPackageImage(formData)
+      return response?.data?.imagePath || ''
     },
     openEditFoodModal(food) {
         this.editingFood = food
@@ -735,6 +776,33 @@ export default {
   border-radius: 16px;
   padding: 24px;
   transition: all 0.2s;
+}
+
+.pkg-image-wrap {
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 14px;
+}
+
+.pkg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pkg-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .package-card:hover {
@@ -1147,6 +1215,13 @@ input:checked + .slider:before { transform: translateX(16px); }
   border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
+}
+
+.helper-text {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .form-input:focus, .form-textarea:focus { outline: none; border-color: #0f172a; }

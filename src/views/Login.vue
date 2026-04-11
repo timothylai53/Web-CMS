@@ -126,7 +126,7 @@
       </div>
       
       <div class="footer-copy">
-        &copy; 2024 Catering Management System
+        &copy; 2026 Catering Management System
       </div>
     </div>
   </div>

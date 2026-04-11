@@ -38,6 +38,9 @@ export const menuAPI = {
     return api.get('/menu/packages', { params });
   },
   getPackageById: (id) => api.get(`/menu/packages/${id}`),
+  uploadPackageImage: (formData) => api.post('/menu/packages/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   createPackage: (data) => api.post('/menu/packages', data),
   updatePackage: (id, data) => api.put(`/menu/packages/${id}`, data),
   deletePackage: (id) => api.delete(`/menu/packages/${id}`),
