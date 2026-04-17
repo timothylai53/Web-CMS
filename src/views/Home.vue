@@ -21,17 +21,64 @@
           
           <!-- Search Bar Integrated in Hero -->
           <div class="search-box-wrapper">
-            <div class="search-box">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-              </svg>
-              <input 
-                v-model="searchQuery" 
-                type="text" 
-                placeholder="Search by name, cuisine, or location..."
-                @input="filterProviders"
-              />
+            <div class="search-toolbar">
+              <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input 
+                  v-model="searchQuery" 
+                  type="text" 
+                  placeholder="Search by name, cuisine, or location..."
+                  @input="filterProviders"
+                />
+              </div>
+              <button @click="toggleFilterPanel" type="button" class="btn-filter" :class="{ active: showFilterPanel || activeFilterCount > 0 }">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <span>Filter</span>
+                <span v-if="activeFilterCount > 0" class="filter-count">{{ activeFilterCount }}</span>
+              </button>
+            </div>
+
+            <div v-if="showFilterPanel" class="filter-panel">
+              <div class="filter-grid">
+                <div class="filter-item">
+                  <label>Budget</label>
+                  <select v-model="budgetFilter" @change="filterProviders">
+                    <option value="all">All Budgets</option>
+                    <option value="budget">Budget Friendly (&lt; RM100)</option>
+                    <option value="standard">Standard (RM100 - RM499)</option>
+                    <option value="premium">Premium (RM500+)</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label>Service Type</label>
+                  <select v-model="serviceAreaFilter" @change="filterProviders">
+                    <option value="all">All Service Types</option>
+                    <option value="radius">Radius Delivery</option>
+                    <option value="locations">Specific Locations</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label>State</label>
+                  <select v-model="stateFilter" @change="filterProviders">
+                    <option value="all">All Malaysia States</option>
+                    <option v-for="state in malaysiaStates" :key="state" :value="state">{{ state }}</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label>Sort By</label>
+                  <select v-model="sortFilter" @change="filterProviders">
+                    <option value="name">Name (A-Z)</option>
+                    <option value="minOrderAsc">Minimum Order: Low to High</option>
+                    <option value="minOrderDesc">Minimum Order: High to Low</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button type="button" @click="clearFilters" class="btn-filter-clear">Clear Filters</button>
+              </div>
             </div>
           </div>
         </div>
@@ -216,9 +263,42 @@ export default {
       providers: [],
       filteredProviders: [],
       searchQuery: '',
+      showFilterPanel: false,
+      budgetFilter: 'all',
+      serviceAreaFilter: 'all',
+      stateFilter: 'all',
+      sortFilter: 'name',
+      malaysiaStates: [
+        'Johor',
+        'Kedah',
+        'Kelantan',
+        'Melaka',
+        'Negeri Sembilan',
+        'Pahang',
+        'Perak',
+        'Perlis',
+        'Pulau Pinang',
+        'Sabah',
+        'Sarawak',
+        'Selangor',
+        'Terengganu',
+        'Kuala Lumpur',
+        'Labuan',
+        'Putrajaya'
+      ],
       loading: true,
       showDetailsModal: false,
       selectedProvider: null
+    }
+  },
+  computed: {
+    activeFilterCount() {
+      let count = 0
+      if (this.budgetFilter !== 'all') count += 1
+      if (this.serviceAreaFilter !== 'all') count += 1
+      if (this.stateFilter !== 'all') count += 1
+      if (this.sortFilter !== 'name') count += 1
+      return count
     }
   },
   async mounted() {
@@ -255,19 +335,77 @@ export default {
     },
     filterProviders() {
       const query = this.searchQuery.toLowerCase()
-      if (!query) {
-        this.filteredProviders = [...this.providers]
-        return
+      let list = [...this.providers]
+
+      if (query) {
+        list = list.filter(provider => {
+          return (
+            provider.businessName?.toLowerCase().includes(query) ||
+            provider.fullName?.toLowerCase().includes(query) ||
+            provider.address?.toLowerCase().includes(query) ||
+            provider.phone?.toLowerCase().includes(query)
+          )
+        })
       }
-      
-      this.filteredProviders = this.providers.filter(provider => {
-        return (
-          provider.businessName?.toLowerCase().includes(query) ||
-          provider.fullName?.toLowerCase().includes(query) ||
-          provider.address?.toLowerCase().includes(query) ||
-          provider.phone?.toLowerCase().includes(query)
-        )
-      })
+
+      if (this.budgetFilter === 'budget') {
+        list = list.filter(provider => Number(provider.minimumOrderValue || 0) < 100)
+      } else if (this.budgetFilter === 'standard') {
+        list = list.filter(provider => {
+          const value = Number(provider.minimumOrderValue || 0)
+          return value >= 100 && value < 500
+        })
+      } else if (this.budgetFilter === 'premium') {
+        list = list.filter(provider => Number(provider.minimumOrderValue || 0) >= 500)
+      }
+
+      if (this.serviceAreaFilter === 'radius') {
+        list = list.filter(provider => provider.serviceAreaType === 'radius')
+      } else if (this.serviceAreaFilter === 'locations') {
+        list = list.filter(provider => provider.serviceAreaType !== 'radius')
+      }
+
+      if (this.stateFilter !== 'all') {
+        list = list.filter(provider => this.providerMatchesState(provider, this.stateFilter))
+      }
+
+      if (this.sortFilter === 'minOrderAsc') {
+        list.sort((a, b) => Number(a.minimumOrderValue || 0) - Number(b.minimumOrderValue || 0))
+      } else if (this.sortFilter === 'minOrderDesc') {
+        list.sort((a, b) => Number(b.minimumOrderValue || 0) - Number(a.minimumOrderValue || 0))
+      } else {
+        list.sort((a, b) => String(a.businessName || '').localeCompare(String(b.businessName || '')))
+      }
+
+      this.filteredProviders = list
+    },
+    toggleFilterPanel() {
+      this.showFilterPanel = !this.showFilterPanel
+    },
+    clearFilters() {
+      this.budgetFilter = 'all'
+      this.serviceAreaFilter = 'all'
+      this.stateFilter = 'all'
+      this.sortFilter = 'name'
+      this.filterProviders()
+    },
+    providerMatchesState(provider, stateName) {
+      const state = String(stateName || '').toLowerCase()
+      if (!state) return true
+
+      const addressText = String(provider.address || '').toLowerCase()
+      const locationsText = Array.isArray(provider.serviceLocations)
+        ? provider.serviceLocations.join(' ').toLowerCase()
+        : ''
+      const serviceAreaText = this.getServiceAreaText(provider).toLowerCase()
+      const directStateField = String(provider.state || provider.businessState || '').toLowerCase()
+
+      return (
+        addressText.includes(state) ||
+        locationsText.includes(state) ||
+        serviceAreaText.includes(state) ||
+        directStateField.includes(state)
+      )
     },
     truncateText(text, maxLength) {
       if (!text) return ''
@@ -386,9 +524,16 @@ export default {
 
 /* Search Box Integration */
 .search-box-wrapper {
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
   position: relative;
+}
+
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateY(20px);
 }
 
 .search-box {
@@ -400,10 +545,114 @@ export default {
   gap: 12px; /* Adjusted gap */
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transform: translateY(20px);
-  width: 100%; 
+  width: 100%;
+  flex: 1;
   box-sizing: border-box; 
   position: relative; /* Ensure overlapping elements are contained */
+}
+
+.btn-filter {
+  height: 52px;
+  min-width: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+
+.btn-filter:hover,
+.btn-filter.active {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.filter-count {
+  background: #22d3ee;
+  color: #0f172a;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.filter-panel {
+  margin-top: 34px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.filter-item label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.02em;
+}
+
+.filter-item select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+}
+
+.filter-item option {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.filter-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-filter-clear {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-filter-clear:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .search-box svg {
@@ -963,6 +1212,23 @@ export default {
   
   .hero-content h1 {
     font-size: 2.5rem;
+  }
+
+  .search-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-filter {
+    width: 100%;
+  }
+
+  .filter-panel {
+    margin-top: 14px;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .providers-grid {

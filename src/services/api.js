@@ -79,6 +79,9 @@ export const quotationAPI = {
   getMyQuotations: () => api.get('/quotations/my-quotations'),
   getAllQuotations: () => api.get('/quotations'),
   getQuotationById: (id) => api.get(`/quotations/${id}`),
+  uploadQuotationPdf: (formData) => api.post('/quotations/upload-pdf', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   updateQuotation: (id, data) => api.put(`/quotations/${id}`, data),
   acceptQuotation: (id) => api.put(`/quotations/${id}/accept`),
   rejectQuotation: (id) => api.put(`/quotations/${id}/reject`),

@@ -52,12 +52,18 @@
               <div class="price">
                 RM {{ pkg.price }} <span class="per-pax">/ pax</span>
               </div>
+              <p
+                v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0"
+                class="discount-note"
+              >
+                {{ Number(pkg.discountMinPax) }}+ pax: RM {{ Number(pkg.discountedPrice).toFixed(2) }}/pax
+              </p>
               
               <p class="description">{{ pkg.description || 'No description available for this package.' }}</p>
               
               <div class="package-meta">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                <span>Max {{ pkg.maxPax || 1000 }} Guests</span>
+                <span>Minimum {{ pkg.minPax || pkg.maxPax || 1 }} Guests</span>
               </div>
               
               <div class="select-btn-placeholder">
@@ -68,14 +74,60 @@
         </div>
       </div>
 
-      <form v-if="selectedPackage" @submit.prevent="addToCart" class="order-form">
+      <div v-if="selectedPackage" class="order-form">
         
         <!-- Selected Package Info -->
         <div class="selected-package-banner">
           <div class="banner-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
           <div class="banner-info">
             <h4>{{ selectedPackage.name }}</h4>
-            <p>RM {{ selectedPackage.price }} per pax • Up to {{ selectedPackage.maxPax }} guests</p>
+            <p>
+              RM {{ activePricePerPax.toFixed(2) }} per pax • Minimum {{ selectedPackage.minPax || selectedPackage.maxPax || 1 }} guests
+              <span v-if="isDiscountApplied">(bulk discount applied)</span>
+            </p>
+            <p
+              v-if="selectedPackage.discountEnabled && Number(selectedPackage.discountMinPax) > 0 && Number(selectedPackage.discountedPrice) >= 0"
+              class="discount-note"
+            >
+              Bulk discount: {{ Number(selectedPackage.discountMinPax) }}+ pax → RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }}/pax
+            </p>
+            <p v-if="selectedPackage.waitersAvailable" class="waiter-summary-text">Optional waiter service available ({{ selectedPackage.waiterQuantity || 0 }} waiters)</p>
+            <p v-if="selectedPackage.venueAvailable" class="venue-summary-text">Optional venue available (RM {{ Number(selectedPackage.venueFee || 0).toFixed(2) }})</p>
+            <p class="limit-summary-text">Limits — Main: {{ mainDishLimit }}, Side: {{ sideDishLimit }}, Beverage: {{ beverageLimit }}, Dessert: {{ dessertLimit }}</p>
+          </div>
+        </div>
+
+        <div v-if="selectedPackage.waitersAvailable" class="form-section">
+          <div class="section-header">
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+            <div>
+              <h3>Waiter Service</h3>
+              <p class="section-subtitle">Tick if you want waiter service for this package ({{ selectedPackage.waiterQuantity || 0 }} waiters, RM {{ Number(selectedPackage.waiterFee || 0).toFixed(2) }} each).</p>
+            </div>
+          </div>
+          <label class="waiter-checkbox-row">
+            <input type="checkbox" v-model="wantsWaiters" />
+            <span>I want waiter service for this booking</span>
+          </label>
+          <div v-if="wantsWaiters" class="waiter-cost-note">
+            Waiter add-on: RM {{ waiterAddonTotal.toFixed(2) }}
+          </div>
+        </div>
+
+        <div v-if="selectedPackage.venueAvailable" class="form-section">
+          <div class="section-header">
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"></path><path d="M5 22V8l7-4 7 4v14"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg></div>
+            <div>
+              <h3>Venue Option</h3>
+              <p class="section-subtitle">Tick if you want venue provided by this package (RM {{ Number(selectedPackage.venueFee || 0).toFixed(2) }}).</p>
+            </div>
+          </div>
+          <label class="venue-checkbox-row">
+            <input type="checkbox" v-model="wantsVenue" />
+            <span>I want venue included for this booking</span>
+          </label>
+          <div v-if="wantsVenue" class="venue-cost-note">
+            Venue add-on: RM {{ venueAddonTotal.toFixed(2) }}
           </div>
         </div>
 
@@ -107,8 +159,9 @@
           </div>
           <div class="subtotal-card">
             <span>Package Subtotal</span>
-            <strong>RM {{ packageSubtotal.toFixed(2) }}</strong>
+            <strong>RM {{ totalWithWaiter.toFixed(2) }}</strong>
           </div>
+          <p v-if="isDiscountApplied" class="discount-note">Discounted rate applied automatically for current pax.</p>
         </div>
 
         <!-- Rice Selection -->
@@ -153,16 +206,16 @@ class="selection-card" :class="{ selected: selectedRice.includes(rice.name), dis
             <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
             <div>
               <h3>Main Dish Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedFoods.length === 8, 'selecting': selectedFoods.length > 0 && selectedFoods.length < 8}">
-                  <span v-if="selectedFoods.length === 0">[ 0 / 8 ] Choose Main Dishes</span>
-                  <span v-else-if="selectedFoods.length < 8">[ {{ selectedFoods.length }} / 8 ] Selecting...</span>
-                  <span v-else>[ 8 / 8 ] Completed ✓</span>
+              <div class="progress-badge" :class="{'completed': selectedFoods.length === mainDishLimit, 'selecting': selectedFoods.length > 0 && selectedFoods.length < mainDishLimit}">
+                  <span v-if="selectedFoods.length === 0">[ 0 / {{ mainDishLimit }} ] Choose Main Dishes</span>
+                  <span v-else-if="selectedFoods.length < mainDishLimit">[ {{ selectedFoods.length }} / {{ mainDishLimit }} ] Selecting...</span>
+                  <span v-else>[ {{ mainDishLimit }} / {{ mainDishLimit }} ] Completed ✓</span>
                 </div>
             </div>
           </div>
           <div class="selection-grid">
             <label v-for="food in availableMainDishes" :key="food.id"
-class="selection-card" :class="{ selected: selectedFoods.includes(food.name), disabled: selectedFoods.length >= 8 && !selectedFoods.includes(food.name), dim: selectedFoods.length > 0 && !selectedFoods.includes(food.name) }">
+class="selection-card" :class="{ selected: selectedFoods.includes(food.name), disabled: selectedFoods.length >= mainDishLimit && !selectedFoods.includes(food.name), dim: selectedFoods.length > 0 && !selectedFoods.includes(food.name) }">
               <input type="checkbox" :value="food.name" v-model="selectedFoods" :id="'food-' + food.id" class="selection-checkbox" />
               <div v-if="food.image" class="selection-image">
                 <img :src="resolveFoodImage(food.image)" :alt="food.name" />
@@ -173,13 +226,13 @@ class="selection-card" :class="{ selected: selectedFoods.includes(food.name), di
               </div>
             </label>
           </div>
-          <p class="warning-note" v-if="selectedFoods.length > 8">
+          <p class="warning-note" v-if="selectedFoods.length > mainDishLimit">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum 8 main dishes allowed. Please deselect {{ selectedFoods.length - 8 }} item(s).
+            Maximum {{ mainDishLimit }} main dishes allowed. Please deselect {{ selectedFoods.length - mainDishLimit }} item(s).
           </p>
         </div>
 
@@ -189,16 +242,16 @@ class="selection-card" :class="{ selected: selectedFoods.includes(food.name), di
             <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>
             <div>
               <h3>Side Dish Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedSides.length === 5, 'selecting': selectedSides.length > 0 && selectedSides.length < 5}">
-                  <span v-if="selectedSides.length === 0">[ 0 / 5 ] Choose Side Dishes</span>
-                  <span v-else-if="selectedSides.length < 5">[ {{ selectedSides.length }} / 5 ] Selecting...</span>
-                  <span v-else>[ 5 / 5 ] Completed ✓</span>
+              <div class="progress-badge" :class="{'completed': selectedSides.length === sideDishLimit, 'selecting': selectedSides.length > 0 && selectedSides.length < sideDishLimit}">
+                  <span v-if="selectedSides.length === 0">[ 0 / {{ sideDishLimit }} ] Choose Side Dishes</span>
+                  <span v-else-if="selectedSides.length < sideDishLimit">[ {{ selectedSides.length }} / {{ sideDishLimit }} ] Selecting...</span>
+                  <span v-else>[ {{ sideDishLimit }} / {{ sideDishLimit }} ] Completed ✓</span>
                 </div>
             </div>
           </div>
           <div class="selection-grid">
             <label v-for="side in availableSides" :key="side.id || side._id"
-class="selection-card" :class="{ selected: selectedSides.includes(side.name), disabled: selectedSides.length >= 5 && !selectedSides.includes(side.name), dim: selectedSides.length > 0 && !selectedSides.includes(side.name) }">
+class="selection-card" :class="{ selected: selectedSides.includes(side.name), disabled: selectedSides.length >= sideDishLimit && !selectedSides.includes(side.name), dim: selectedSides.length > 0 && !selectedSides.includes(side.name) }">
               <input type="checkbox" :value="side.name" v-model="selectedSides" :id="'side-' + (side.id || side._id)" class="selection-checkbox" />
               <div v-if="side.image" class="selection-image">
                 <img :src="resolveFoodImage(side.image)" :alt="side.name" />
@@ -209,13 +262,13 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
               </div>
             </label>
           </div>
-          <p class="warning-note" v-if="selectedSides.length > 5">
+          <p class="warning-note" v-if="selectedSides.length > sideDishLimit">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum 5 side dishes allowed. Please deselect {{ selectedSides.length - 5 }} item(s).
+            Maximum {{ sideDishLimit }} side dishes allowed. Please deselect {{ selectedSides.length - sideDishLimit }} item(s).
           </p>
         </div>
 
@@ -225,15 +278,15 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
             <div>
               <h3>Beverage Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedDrinks.length === 3, 'selecting': selectedDrinks.length > 0 && selectedDrinks.length < 3}">
-                  <span v-if="selectedDrinks.length === 0">[ 0 / 3 ] Choose Beverages</span>
-                  <span v-else-if="selectedDrinks.length < 3">[ {{ selectedDrinks.length }} / 3 ] Selecting...</span>
-                  <span v-else>[ 3 / 3 ] Completed ✓</span>
+              <div class="progress-badge" :class="{'completed': selectedDrinks.length === beverageLimit, 'selecting': selectedDrinks.length > 0 && selectedDrinks.length < beverageLimit}">
+                  <span v-if="selectedDrinks.length === 0">[ 0 / {{ beverageLimit }} ] Choose Beverages</span>
+                  <span v-else-if="selectedDrinks.length < beverageLimit">[ {{ selectedDrinks.length }} / {{ beverageLimit }} ] Selecting...</span>
+                  <span v-else>[ {{ beverageLimit }} / {{ beverageLimit }} ] Completed ✓</span>
                 </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="drink in availableDrinks" :key="drink.id || drink._id" class="selection-card" :class="{ selected: selectedDrinks.includes(drink.name), disabled: selectedDrinks.length >= 3 && !selectedDrinks.includes(drink.name), dim: selectedDrinks.length > 0 && !selectedDrinks.includes(drink.name) }">
+            <label v-for="drink in availableDrinks" :key="drink.id || drink._id" class="selection-card" :class="{ selected: selectedDrinks.includes(drink.name), disabled: selectedDrinks.length >= beverageLimit && !selectedDrinks.includes(drink.name), dim: selectedDrinks.length > 0 && !selectedDrinks.includes(drink.name) }">
               <input type="checkbox" :value="drink.name" v-model="selectedDrinks" :id="'drink-' + (drink.id || drink._id)" class="selection-checkbox" />
               <div v-if="drink.image" class="selection-image">
                 <img :src="resolveFoodImage(drink.image)" :alt="drink.name" />
@@ -244,13 +297,13 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
               </div>
             </label>
           </div>
-          <p class="warning-note" v-if="selectedDrinks.length > 3">
+          <p class="warning-note" v-if="selectedDrinks.length > beverageLimit">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum 3 beverages allowed. Please deselect {{ selectedDrinks.length - 3 }} item(s).
+            Maximum {{ beverageLimit }} beverages allowed. Please deselect {{ selectedDrinks.length - beverageLimit }} item(s).
           </p>
         </div>
 
@@ -260,15 +313,15 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v2"/><path d="M12 8v2"/><path d="M17 8v2"/></svg></div>
             <div>
               <h3>Dessert Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedDesserts.length === 3, 'selecting': selectedDesserts.length > 0 && selectedDesserts.length < 3}">
-                  <span v-if="selectedDesserts.length === 0">[ 0 / 3 ] Choose Desserts</span>
-                  <span v-else-if="selectedDesserts.length < 3">[ {{ selectedDesserts.length }} / 3 ] Selecting...</span>
-                  <span v-else>[ 3 / 3 ] Completed ✓</span>
+              <div class="progress-badge" :class="{'completed': selectedDesserts.length === dessertLimit, 'selecting': selectedDesserts.length > 0 && selectedDesserts.length < dessertLimit}">
+                  <span v-if="selectedDesserts.length === 0">[ 0 / {{ dessertLimit }} ] Choose Desserts</span>
+                  <span v-else-if="selectedDesserts.length < dessertLimit">[ {{ selectedDesserts.length }} / {{ dessertLimit }} ] Selecting...</span>
+                  <span v-else>[ {{ dessertLimit }} / {{ dessertLimit }} ] Completed ✓</span>
                 </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="dessert in availableDesserts" :key="dessert.id || dessert._id" class="selection-card" :class="{ selected: selectedDesserts.includes(dessert.name), disabled: selectedDesserts.length >= 3 && !selectedDesserts.includes(dessert.name), dim: selectedDesserts.length > 0 && !selectedDesserts.includes(dessert.name) }">
+            <label v-for="dessert in availableDesserts" :key="dessert.id || dessert._id" class="selection-card" :class="{ selected: selectedDesserts.includes(dessert.name), disabled: selectedDesserts.length >= dessertLimit && !selectedDesserts.includes(dessert.name), dim: selectedDesserts.length > 0 && !selectedDesserts.includes(dessert.name) }">
               <input type="checkbox" :value="dessert.name" v-model="selectedDesserts" :id="'dessert-' + (dessert.id || dessert._id)" class="selection-checkbox" />
               <div v-if="dessert.image" class="selection-image">
                 <img :src="resolveFoodImage(dessert.image)" :alt="dessert.name" />
@@ -279,13 +332,13 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
               </div>
             </label>
           </div>
-          <p class="warning-note" v-if="selectedDesserts.length > 3">
+          <p class="warning-note" v-if="selectedDesserts.length > dessertLimit">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum 3 desserts allowed. Please deselect {{ selectedDesserts.length - 3 }} item(s).
+            Maximum {{ dessertLimit }} desserts allowed. Please deselect {{ selectedDesserts.length - dessertLimit }} item(s).
           </p>
         </div>
 
@@ -313,8 +366,8 @@ Examples:
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             </div>
             <div class="info-content">
-              <strong>Custom Pricing & Bulk Orders</strong>
-              <p>Planning for 100+ guests, require halal certification, or want to modify the menu? Submit a quotation instead of buying directly.</p>
+              <strong>Quotation Required</strong>
+              <p>All bookings now require quotation approval. Submit your request and wait for provider confirmation.</p>
             </div>
           </div>
 
@@ -322,29 +375,23 @@ Examples:
           <div class="floating-action-bar">
             <div class="fab-price-section">
               <span class="fab-label">Total Estimate</span>
-              <strong class="fab-amount">RM {{ packageSubtotal.toFixed(2) }} <span class="fab-pax-count">for {{ numberOfPax }} guests</span></strong>
+              <strong class="fab-amount">RM {{ totalWithWaiter.toFixed(2) }} <span class="fab-pax-count">for {{ numberOfPax }} guests</span></strong>
             </div>
             
             <div class="fab-actions">
-              <button type="button" @click="requestQuotation" class="fab-btn outline">
+              <button type="button" @click="requestQuotation" class="fab-btn primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 <span>Request Quote</span>
               </button>
-              
-              <button type="submit" class="fab-btn primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                <span>Add to Cart</span>
-              </button>
             </div>
           </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { useMenuStore } from '@/stores/menu'
-import { useCartStore } from '@/stores/cart'
 import { useQuotationsStore } from '@/stores/quotations'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
@@ -361,6 +408,8 @@ export default {
       selectedSides: [],
       selectedDrinks: [],
       selectedDesserts: [],
+      wantsWaiters: false,
+      wantsVenue: false,
       remark: "",
       notification: {
         show: false,
@@ -455,8 +504,58 @@ export default {
       }
       return allDesserts
     },
+    mainDishLimit() {
+      const value = Number(this.selectedPackage?.mainDishLimit)
+      return value > 0 ? value : 8
+    },
+    sideDishLimit() {
+      const value = Number(this.selectedPackage?.sideDishLimit)
+      return value > 0 ? value : 5
+    },
+    beverageLimit() {
+      const value = Number(this.selectedPackage?.beverageLimit)
+      return value > 0 ? value : 3
+    },
+    dessertLimit() {
+      const value = Number(this.selectedPackage?.dessertLimit)
+      return value > 0 ? value : 3
+    },
+    hasPackageDiscount() {
+      if (!this.selectedPackage) return false
+      const hasThreshold = Number(this.selectedPackage.discountMinPax) > 0
+      const hasDiscountedPrice = Number.isFinite(Number(this.selectedPackage.discountedPrice))
+      return !!this.selectedPackage.discountEnabled && hasThreshold && hasDiscountedPrice
+    },
+    isDiscountApplied() {
+      if (!this.selectedPackage || !this.hasPackageDiscount) return false
+      return Number(this.numberOfPax) >= Number(this.selectedPackage.discountMinPax)
+    },
+    activePricePerPax() {
+      if (!this.selectedPackage) return 0
+      if (this.isDiscountApplied) {
+        return Number(this.selectedPackage.discountedPrice) || 0
+      }
+      return Number(this.selectedPackage.price) || 0
+    },
     packageSubtotal() {
-      return this.selectedPackage ? this.selectedPackage.price * this.numberOfPax : 0
+      return this.selectedPackage ? this.activePricePerPax * this.numberOfPax : 0
+    },
+    waiterAddonTotal() {
+      if (!this.selectedPackage || !this.selectedPackage.waitersAvailable || !this.wantsWaiters) {
+        return 0
+      }
+      const quantity = Number(this.selectedPackage.waiterQuantity) || 0
+      const fee = Number(this.selectedPackage.waiterFee) || 0
+      return quantity * fee
+    },
+    venueAddonTotal() {
+      if (!this.selectedPackage || !this.selectedPackage.venueAvailable || !this.wantsVenue) {
+        return 0
+      }
+      return Number(this.selectedPackage.venueFee) || 0
+    },
+    totalWithWaiter() {
+      return this.packageSubtotal + this.waiterAddonTotal + this.venueAddonTotal
     }
   },
   methods: {
@@ -493,6 +592,8 @@ export default {
       this.selectedSides = []
       this.selectedDrinks = []
       this.selectedDesserts = []
+      this.wantsWaiters = false
+      this.wantsVenue = false
       this.remark = ""
       
       // Fetch foods for this specific provider
@@ -510,56 +611,6 @@ export default {
           orderForm.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
       })
-    },
-    addToCart() {
-      if (this.selectedRice.length > 2) {
-        this.showNotification("You can select up to 2 rice types only.", "error")
-        return;
-      }
-      if (this.selectedFoods.length > 8) {
-        this.showNotification("You can select up to 8 main dishes only.", "error")
-        return;
-      }
-      if (this.selectedSides.length > 5) {
-        this.showNotification("You can select up to 5 side dishes only.", "error")
-        return;
-      }
-      if (this.selectedDrinks.length > 3) {
-        this.showNotification("You can select up to 3 beverages only.", "error")
-        return;
-      }
-      if (this.selectedDesserts.length > 3) {
-        this.showNotification("You can select up to 3 desserts only.", "error")
-        return;
-      }
-
-      const cartStore = useCartStore()
-      
-      cartStore.addToCart({
-        id: this.selectedPackage._id || this.selectedPackage.id,
-        packageId: this.selectedPackage._id || this.selectedPackage.id,
-        providerId: this.selectedPackage.providerId?._id || this.selectedPackage.providerId,
-        name: this.selectedPackage.name,
-        description: this.selectedPackage.description,
-        price: this.selectedPackage.price,
-        quantity: this.numberOfPax,
-        foods: [...this.selectedRice, ...this.selectedFoods, ...this.selectedSides],
-        drinks: this.selectedDrinks,
-        cakes: this.selectedDesserts,
-        remark: this.remark
-      })
-
-      this.showNotification('Package added to cart!', 'success')
-      
-      // Reset form
-      this.selectedPackage = null
-      this.numberOfPax = 50
-      this.selectedRice = []
-      this.selectedFoods = []
-      this.selectedSides = []
-      this.selectedDrinks = []
-      this.selectedDesserts = []
-      this.remark = ""
     },
     async requestQuotation() {
       // Validation
@@ -587,8 +638,25 @@ export default {
       if (this.selectedSides.length > 0) itemsSummary.push(`Sides: ${this.selectedSides.join(', ')}`)
       if (this.selectedDrinks.length > 0) itemsSummary.push(`Drinks: ${this.selectedDrinks.join(', ')}`)
       if (this.selectedDesserts.length > 0) itemsSummary.push(`Desserts: ${this.selectedDesserts.join(', ')}`)
+      if (this.selectedPackage.waitersAvailable) {
+        itemsSummary.push(
+          `Waiter Service: ${this.wantsWaiters ? `Yes (${this.selectedPackage.waiterQuantity || 0} waiters × RM ${(Number(this.selectedPackage.waiterFee) || 0).toFixed(2)} = RM ${this.waiterAddonTotal.toFixed(2)})` : 'No'}`
+        )
+      }
+      if (this.selectedPackage.venueAvailable) {
+        itemsSummary.push(
+          `Venue: ${this.wantsVenue ? `Yes (RM ${this.venueAddonTotal.toFixed(2)})` : 'No'}`
+        )
+      }
       
-      const standardPrice = this.selectedPackage.price * this.numberOfPax
+      const standardPerPax = Number(this.selectedPackage.price) || 0
+      const appliedPerPax = this.activePricePerPax
+      const standardPrice = appliedPerPax * this.numberOfPax
+      const discountDetails = this.hasPackageDiscount
+        ? `
+Bulk Discount Config: ${Number(this.selectedPackage.discountMinPax)}+ pax at RM ${Number(this.selectedPackage.discountedPrice).toFixed(2)}/pax
+Applied Price Per Pax: RM ${appliedPerPax.toFixed(2)} (${this.isDiscountApplied ? 'DISCOUNT APPLIED' : 'NORMAL RATE'})`
+        : ''
       
       // Prepare quotation request with clear context
       const quotationData = {
@@ -605,7 +673,7 @@ export default {
         additionalRequests: `━━━━ QUOTATION REQUEST ━━━━
 
 BASED ON PACKAGE: ${this.selectedPackage.name}
-Standard Price: RM ${this.selectedPackage.price}/pax × ${this.numberOfPax} guests = RM ${standardPrice.toFixed(2)}
+Standard Price: RM ${standardPerPax.toFixed(2)}/pax × ${this.numberOfPax} guests = RM ${standardPrice.toFixed(2)}${discountDetails}
 
 SELECTED ITEMS:
 ${itemsSummary.join('\n')}
@@ -635,6 +703,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
         this.selectedSides = []
         this.selectedDrinks = []
         this.selectedDesserts = []
+        this.wantsWaiters = false
+        this.wantsVenue = false
         this.remark = ""
         
         // Navigate to quotations page after 2 seconds
@@ -670,7 +740,6 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   },
   mounted() {
     const menuStore = useMenuStore()
-    const cartStore = useCartStore()
     
     // Get providerId from query parameter
     this.selectedProviderId = this.$route.query.providerId || null
@@ -684,8 +753,6 @@ Note: Customer is requesting a custom quotation. Please review their requirement
       menuStore.fetchPackages()
       menuStore.fetchFoods()
     }
-    
-    cartStore.loadFromStorage()
   }
 };
 </script>
@@ -912,6 +979,13 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   color: #64748b;
 }
 
+.discount-note {
+  margin-top: 6px;
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .description {
   color: #64748b;
   font-size: 0.95rem;
@@ -1000,6 +1074,79 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   color: #64748b;
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.waiter-summary-text {
+  margin-top: 6px;
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.venue-summary-text {
+  margin-top: 4px;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.limit-summary-text {
+  margin-top: 4px;
+  color: #7c3aed;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.waiter-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #d1fae5;
+  background: #f0fdfa;
+  border-radius: 10px;
+  color: #115e59;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.waiter-checkbox-row input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.waiter-cost-note {
+  margin-top: 10px;
+  color: #0f766e;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.venue-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  border-radius: 10px;
+  color: #1e3a8a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.venue-checkbox-row input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.venue-cost-note {
+  margin-top: 10px;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .form-section {

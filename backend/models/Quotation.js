@@ -62,6 +62,14 @@ const quotationSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  quotationPdfUrl: {
+    type: String,
+    default: null
+  },
+  quotationPdfName: {
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

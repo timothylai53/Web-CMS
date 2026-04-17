@@ -10,7 +10,14 @@ export const useCartStore = defineStore('cart', {
     cartItemCount: (state) => state.items.reduce((total, item) => total + item.quantity, 0),
     
     cartTotal: (state) => state.items.reduce((total, item) => {
-      return total + (item.price * item.quantity)
+      const baseTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0)
+      const waiterTotal = item.wantsWaiters
+        ? (Number(item.waiterFee) || 0) * (Number(item.waiterQuantity) || 0)
+        : 0
+      const venueTotal = item.wantsVenue
+        ? (Number(item.venueFee) || 0)
+        : 0
+      return total + baseTotal + waiterTotal + venueTotal
     }, 0),
     
     cartItems: (state) => state.items

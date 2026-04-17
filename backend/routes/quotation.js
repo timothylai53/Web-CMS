@@ -1,8 +1,60 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import Quotation from '../models/Quotation.js';
 import { authenticate, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const quotationUploadsDir = path.join(__dirname, '..', 'uploads', 'quotations');
+if (!fs.existsSync(quotationUploadsDir)) {
+  fs.mkdirSync(quotationUploadsDir, { recursive: true });
+}
+
+const quotationPdfStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, quotationUploadsDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `quotation-${uniqueSuffix}.pdf`);
+  }
+});
+
+const quotationPdfFilter = (req, file, cb) => {
+  const isPdfMime = file.mimetype === 'application/pdf';
+  const isPdfExt = path.extname(file.originalname || '').toLowerCase() === '.pdf';
+  if (isPdfMime || isPdfExt) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'), false);
+  }
+};
+
+const uploadQuotationPdf = multer({
+  storage: quotationPdfStorage,
+  fileFilter: quotationPdfFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+router.post('/upload-pdf', authenticate, isAdmin, uploadQuotationPdf.single('pdf'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No PDF file uploaded' });
+    }
+
+    return res.status(201).json({
+      message: 'Quotation PDF uploaded successfully',
+      pdfPath: `/uploads/quotations/${req.file.filename}`,
+      fileName: req.file.originalname || req.file.filename
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 // Create quotation request
 router.post('/', authenticate, async (req, res) => {

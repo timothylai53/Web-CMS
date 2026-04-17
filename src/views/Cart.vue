@@ -49,6 +49,26 @@
                   </div>
                 </div>
 
+                <div class="waiter-line" v-if="item.wantsWaiters">
+                  <span class="waiter-label">Waiters:</span>
+                  <span class="waiter-value">Yes ({{ item.waiterQuantity || 0 }}) • RM {{ Number(item.waiterFee || 0).toFixed(2) }} each • Add-on RM {{ getItemWaiterTotal(item).toFixed(2) }}</span>
+                </div>
+
+                <div class="waiter-line off" v-else-if="item.waiterQuantity || item.waiterFee">
+                  <span class="waiter-label">Waiters:</span>
+                  <span class="waiter-value">No</span>
+                </div>
+
+                <div class="venue-line" v-if="item.wantsVenue">
+                  <span class="venue-label">Venue:</span>
+                  <span class="venue-value">Yes • Add-on RM {{ getItemVenueTotal(item).toFixed(2) }}</span>
+                </div>
+
+                <div class="venue-line off" v-else-if="item.venueFee">
+                  <span class="venue-label">Venue:</span>
+                  <span class="venue-value">No</span>
+                </div>
+
                 <div v-if="item.remark" class="remark-box">
                   <span class="label">Note:</span> {{ item.remark }}
                 </div>
@@ -80,7 +100,7 @@
 
                 <div class="total-price">
                   <span class="label">Total</span>
-                  <span class="value">RM {{ (item.price * item.quantity).toFixed(2) }}</span>
+                  <span class="value">RM {{ getItemTotal(item).toFixed(2) }}</span>
                 </div>
               </div>
             </div>
@@ -141,6 +161,18 @@ export default {
     }
   },
   methods: {
+    getItemWaiterTotal(item) {
+      if (!item.wantsWaiters) return 0
+      return (Number(item.waiterQuantity) || 0) * (Number(item.waiterFee) || 0)
+    },
+    getItemVenueTotal(item) {
+      if (!item.wantsVenue) return 0
+      return Number(item.venueFee) || 0
+    },
+    getItemTotal(item) {
+      const baseTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0)
+      return baseTotal + this.getItemWaiterTotal(item) + this.getItemVenueTotal(item)
+    },
     getItemCategoryGroups(item) {
       const groups = [
         { key: 'rice', label: 'Rice', items: item.rice || [] },
@@ -359,6 +391,72 @@ export default {
   font-size: 14px;
   margin-bottom: 15px;
   line-height: 1.5;
+}
+
+.waiter-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+}
+
+.waiter-line.off {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.waiter-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f766e;
+  text-transform: uppercase;
+}
+
+.waiter-line.off .waiter-label {
+  color: #64748b;
+}
+
+.waiter-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.venue-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.venue-line.off {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.venue-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-transform: uppercase;
+}
+
+.venue-line.off .venue-label {
+  color: #64748b;
+}
+
+.venue-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .selected-items-tags {

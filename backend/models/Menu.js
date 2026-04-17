@@ -17,6 +17,25 @@ const packageSchema = new mongoose.Schema({
     type: Number,
     default: 100
   },
+  minPax: {
+    type: Number,
+    min: 1,
+    default: 1
+  },
+  discountEnabled: {
+    type: Boolean,
+    default: false
+  },
+  discountMinPax: {
+    type: Number,
+    min: 2,
+    default: null
+  },
+  discountedPrice: {
+    type: Number,
+    min: 0,
+    default: null
+  },
   category: {
     type: String,
     enum: ['basic', 'standard', 'premium', 'deluxe'],
@@ -25,6 +44,49 @@ const packageSchema = new mongoose.Schema({
   image: {
     type: String,
     default: null
+  },
+  waitersAvailable: {
+    type: Boolean,
+    default: false
+  },
+  waiterQuantity: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  waiterFee: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  venueAvailable: {
+    type: Boolean,
+    default: false
+  },
+  venueFee: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  mainDishLimit: {
+    type: Number,
+    min: 1,
+    default: 8
+  },
+  sideDishLimit: {
+    type: Number,
+    min: 1,
+    default: 5
+  },
+  beverageLimit: {
+    type: Number,
+    min: 1,
+    default: 3
+  },
+  dessertLimit: {
+    type: Number,
+    min: 1,
+    default: 3
   },
   providerId: {
     type: mongoose.Schema.Types.ObjectId,

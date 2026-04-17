@@ -79,6 +79,14 @@
                   <span class="label">Location</span>
                   <span class="value truncate">{{ quotation.location || 'TBA' }}</span>
                 </div>
+                <div class="info-point">
+                  <span class="label">Catering Provider</span>
+                  <span class="value">{{ getProviderName(quotation) }}</span>
+                </div>
+                <div class="info-point">
+                  <span class="label">Selected Package</span>
+                  <span class="value">{{ getPackageName(quotation) }}</span>
+                </div>
               </div>
 
               <!-- Admin Response Preview -->
@@ -91,45 +99,190 @@
             </div>
 
             <div class="card-footer">
-              <!-- Expand /Details Button could go here, or we use the whole card click -->
-              <button class="btn-details" @click="selectedQuotation = selectedQuotation === quotation._id ? null : quotation._id">
-                {{ selectedQuotation === quotation._id ? 'Hide Details' : 'View Details' }}
-              </button>
+              <div class="card-main-actions">
+                <button class="btn-details" @click="openDetailsModal(quotation)">
+                  View Details
+                </button>
+                <button
+                  v-if="quotation.status === 'quoted' && quotation.quotationPdfUrl"
+                  class="btn-view-pdf"
+                  @click.stop="downloadQuotationPdf(quotation)"
+                >
+                  View PDF
+                </button>
+              </div>
               
               <div v-if="quotation.status === 'quoted'" class="action-actions-sm">
                  <button @click.stop="acceptQuotation(quotation)" class="btn-xs-accept">Accept</button>
               </div>
             </div>
 
-            <!-- Expanded Details -->
-            <div v-if="selectedQuotation === quotation._id" class="card-expanded">
-               <div class="expanded-content">
-                  <div class="section-title">Requirements</div>
-                  <p class="req-text">{{ quotation.additionalRequests || 'No special requirements.' }}</p>
-
-                  <div v-if="quotation.adminNotes" class="provider-notes">
-                    <div class="section-title">Provider Notes</div>
-                    <p>{{ quotation.adminNotes }}</p>
-                  </div>
-
-                  <div v-if="quotation.status === 'quoted'" class="expanded-actions">
-                    <button @click="acceptQuotation(quotation)" class="btn-accept-full">
-                      Accept Quote & Checkout
-                    </button>
-                    <button @click="rejectQuotation(quotation)" class="btn-reject-full">
-                      Reject
-                    </button>
-                  </div>
-                  
-                  <div v-if="quotation.status === 'accepted'" class="expanded-actions">
-                     <button @click="proceedToOrder(quotation)" class="btn-proceed-full">
-                        Proceed to Checkout
-                     </button>
-                  </div>
-               </div>
-            </div>
-
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDetailsModal && selectedQuotation" class="modal-overlay" @click="closeDetailsModal">
+      <div class="details-modal-content" @click.stop>
+        <div class="details-modal-header">
+          <div>
+            <h3>Quotation Details</h3>
+            <p class="details-subtitle">#{{ selectedQuotation.quotationId || 'PROCESSING' }}</p>
+          </div>
+          <button @click="closeDetailsModal" class="close-btn">✕</button>
+        </div>
+
+        <div class="details-modal-body grouped-details">
+          <div class="details-category">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/>
+                  <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              Event Details
+            </div>
+            <div class="details-list">
+              <div class="detail-row">
+                <span class="detail-key">Date & Time</span>
+                <span class="detail-val">{{ formatDate(selectedQuotation.eventDate) }}{{ selectedQuotation.eventTime ? `, ${selectedQuotation.eventTime}` : '' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Guests</span>
+                <span class="detail-val">{{ selectedQuotation.numberOfGuests }} pax</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Event Type</span>
+                <span class="detail-val">{{ selectedQuotation.eventType || 'General Event' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Location</span>
+                <span class="detail-val">{{ selectedQuotation.location || 'To be confirmed' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="details-category">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="3" width="7" height="18" rx="1" stroke="currentColor" stroke-width="2"/>
+                  <rect x="14" y="8" width="7" height="13" rx="1" stroke="currentColor" stroke-width="2"/>
+                  <line x1="6.5" y1="7" x2="6.5" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="6.5" y1="11" x2="6.5" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="6.5" y1="15" x2="6.5" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
+              Provider & Package
+            </div>
+            <div class="details-list">
+              <div class="detail-row">
+                <span class="detail-key">Catering Provider</span>
+                <span class="detail-val">{{ getProviderName(selectedQuotation) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Selected Package</span>
+                <span class="detail-val">{{ getPackageName(selectedQuotation) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Status</span>
+                <span class="detail-val">{{ selectedQuotation.status }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="details-category" v-if="selectedQuotation.status === 'quoted' || selectedQuotation.status === 'accepted'">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 7V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M9 9.5C9 8.67 9.9 8 11 8H13C14.1 8 15 8.67 15 9.5C15 10.33 14.1 11 13 11H11C9.9 11 9 11.67 9 12.5C9 13.33 9.9 14 11 14H13C14.1 14 15 14.67 15 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
+              Quotation Summary
+            </div>
+            <div class="details-list">
+              <div class="detail-row">
+                <span class="detail-key">Quoted Amount</span>
+                <span class="detail-val detail-strong">RM {{ selectedQuotation.quotedAmount?.toFixed(2) || '0.00' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Price Per Pax</span>
+                <span class="detail-val">RM {{ getQuotedPerPax(selectedQuotation).toFixed(2) }}</span>
+              </div>
+              <div class="detail-row" v-if="selectedQuotation.quotationPdfUrl">
+                <span class="detail-key">Quotation PDF</span>
+                <span class="detail-val">
+                  <button class="btn-download-pdf" @click="downloadQuotationPdf(selectedQuotation)">Download PDF</button>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="details-category">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 3H17L21 7V21H7V3Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M17 3V7H21" stroke="currentColor" stroke-width="2"/>
+                  <line x1="10" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2"/>
+                  <line x1="10" y1="16" x2="18" y2="16" stroke="currentColor" stroke-width="2"/>
+                  <line x1="10" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              Requirements (Managed)
+            </div>
+            <div v-if="getCategorizedRequirements(selectedQuotation).length === 0" class="requirements-empty">
+              No special requirements submitted.
+            </div>
+            <div v-else class="requirements-grouped">
+              <div
+                v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
+                :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}`"
+                class="req-category"
+              >
+                <div class="req-cat-title">{{ group.name }} :</div>
+                <p v-if="isSingleLineRequirementCategory(group.name)" class="req-single-line">
+                  {{ getSingleLineRequirement(group) }}
+                </p>
+                <ol v-if="shouldUseNumberedRequirements(group.name)" class="req-list numbered">
+                  <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
+                    {{ item }}
+                  </li>
+                </ol>
+                <ul v-else-if="!isSingleLineRequirementCategory(group.name)" class="req-list normal">
+                  <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
+                    {{ item }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="selectedQuotation.adminNotes" class="details-category provider-notes">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 11.5C21 16.19 16.97 20 12 20C10.73 20 9.52 19.75 8.43 19.29L3 21L4.81 16.04C4.29 14.7 4 13.2 4 11.5C4 6.81 8.03 3 13 3C17.97 3 21 6.81 21 11.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              Provider Notes
+            </div>
+            <p>{{ selectedQuotation.adminNotes }}</p>
+          </div>
+        </div>
+
+        <div class="details-modal-footer">
+          <button @click="closeDetailsModal" class="btn-close-details">Close</button>
+          <template v-if="selectedQuotation.status === 'quoted'">
+            <button @click="rejectQuotation(selectedQuotation)" class="btn-reject-full">Reject</button>
+            <button @click="acceptQuotation(selectedQuotation)" class="btn-accept-full">Accept Quote & Checkout</button>
+          </template>
+          <button v-if="selectedQuotation.status === 'accepted'" @click="proceedToOrder(selectedQuotation)" class="btn-proceed-full">Proceed to Checkout</button>
         </div>
       </div>
     </div>
@@ -224,6 +377,7 @@ export default {
     return {
       activeTab: 'all',
       showRequestModal: false,
+      showDetailsModal: false,
       submitting: false,
       selectedQuotation: null,
       quotationForm: {
@@ -269,6 +423,14 @@ export default {
     }
   },
   methods: {
+    openDetailsModal(quotation) {
+      this.selectedQuotation = quotation
+      this.showDetailsModal = true
+    },
+    closeDetailsModal() {
+      this.showDetailsModal = false
+      this.selectedQuotation = null
+    },
     closeModal() {
       this.showRequestModal = false
       this.resetForm()
@@ -309,6 +471,218 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    getProviderName(quotation) {
+      return quotation?.providerId?.businessName || quotation?.providerId?.username || 'Catering Provider'
+    },
+    getPackageName(quotation) {
+      return quotation?.packageId?.name || quotation?.packageName || 'Custom Package'
+    },
+    getQuotedPerPax(quotation) {
+      const quotedAmount = Number(quotation?.quotedAmount || 0)
+      const pax = Number(quotation?.numberOfGuests || 0)
+      if (!quotedAmount || !pax) return 0
+      return quotedAmount / pax
+    },
+    resolveUploadUrl(filePath) {
+      if (!filePath) return ''
+      if (filePath.startsWith('http') || filePath.startsWith('data:')) {
+        return filePath
+      }
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+      const hostBase = apiUrl.replace(/\/api\/?$/, '')
+      let normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`
+      if (normalizedPath.startsWith('/uploads/')) {
+        normalizedPath = `/api${normalizedPath}`
+      }
+      return `${hostBase}${normalizedPath}`
+    },
+    downloadQuotationPdf(quotation) {
+      const pdfUrl = this.resolveUploadUrl(quotation?.quotationPdfUrl)
+      if (!pdfUrl) {
+        alert('No quotation PDF available for this quote yet.')
+        return
+      }
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+    },
+    getRequirementsList(quotation) {
+      const content = quotation?.additionalRequests || ''
+      if (!content.trim()) return []
+      return content
+        .split(/\r?\n|;|,/)
+        .map(item => item.trim())
+        .filter(Boolean)
+    },
+    getCategorizedRequirements(quotation) {
+      const rawText = String(quotation?.additionalRequests || '').trim()
+      if (!rawText) return []
+
+      const groups = {}
+      const normalizedLines = rawText
+        .split(/\r?\n|;/)
+        .map(line => line.trim())
+        .filter(Boolean)
+
+      const isBoilerplateLine = (line) => {
+        const cleaned = String(line || '').trim()
+        if (!cleaned) return true
+        if (/^[━\-_=]{3,}$/.test(cleaned)) return true
+
+        const upper = cleaned.toUpperCase()
+        const ignoredHeaders = [
+          'QUOTATION REQUEST',
+          'SELECTED ITEMS',
+          'BASED ON PACKAGE',
+          'STANDARD PRICE'
+        ]
+        return ignoredHeaders.some(header => upper.includes(header))
+      }
+
+      const addGroupItem = (name, item) => {
+        const categoryName = this.normalizeRequirementCategory(name)
+        if (!groups[categoryName]) {
+          groups[categoryName] = []
+        }
+        if (item && item.trim()) {
+          const cleanedItem = item.trim()
+
+          if (this.isSingleLineRequirementCategory(categoryName)) {
+            if (groups[categoryName].length === 0) {
+              groups[categoryName].push(cleanedItem)
+            } else {
+              groups[categoryName][0] = `${groups[categoryName][0]} ${cleanedItem}`.replace(/\s+/g, ' ').trim()
+            }
+            return
+          }
+
+          groups[categoryName].push(cleanedItem)
+        }
+      }
+
+      let currentCategory = 'General'
+
+      normalizedLines.forEach((line) => {
+        const upperLine = line.toUpperCase()
+        if (upperLine.startsWith('CUSTOMER REMARKS')) {
+          currentCategory = 'Customer remarks'
+          if (!groups[currentCategory]) {
+            groups[currentCategory] = []
+          }
+          return
+        }
+
+        if (isBoilerplateLine(line)) {
+          return
+        }
+
+        const headingOnlyMatch = line.match(/^([^:]{2,40})\s*:\s*$/)
+        if (headingOnlyMatch) {
+          currentCategory = this.normalizeRequirementCategory(headingOnlyMatch[1])
+          if (!groups[currentCategory]) {
+            groups[currentCategory] = []
+          }
+          return
+        }
+
+        const categoryMatch = line.match(/^([^:]{2,40})\s*:\s*(.+)$/)
+
+        if (categoryMatch) {
+          const category = this.normalizeRequirementCategory(categoryMatch[1])
+          const body = categoryMatch[2].trim()
+
+          currentCategory = category
+
+          const numberedItemMatches = body.match(/\d+[)\-]\s+[^\d].*?(?=(?:\s\d+[)\-]\s+)|$)|\d+\.(?!\d)\s+.*?(?=(?:\s\d+\.(?!\d)\s+)|$)/g)
+
+          if (Array.isArray(numberedItemMatches) && numberedItemMatches.length > 0) {
+            numberedItemMatches
+              .map(item => item.replace(/^\d+\s*[)\.-]\s*/, '').trim())
+              .filter(Boolean)
+              .forEach(item => addGroupItem(category, item))
+            return
+          }
+
+          body
+            .split(/,/) 
+            .map(part => part.trim())
+            .filter(Boolean)
+            .forEach(item => addGroupItem(category, item))
+          return
+        }
+
+        const cleanedItem = line
+          .replace(/^[-•]\s*/, '')
+          .replace(/^\d+\s*[\.)-]\s*/, '')
+          .trim()
+
+        if (cleanedItem) {
+          addGroupItem(currentCategory, cleanedItem)
+        }
+      })
+
+      return Object.entries(groups)
+        .map(([name, items]) => ({ name, items }))
+        .filter(group => group.items.length > 0)
+    },
+    normalizeRequirementCategory(categoryName) {
+      const normalizedCategory = String(categoryName || '')
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      const categoryMap = {
+        rice: 'Rice',
+        'main dish': 'Main dish',
+        'main dishes': 'Main dish',
+        'side dish': 'Side dish',
+        sides: 'Side dish',
+        drinks: 'Beverage',
+        drink: 'Beverage',
+        beverage: 'Beverage',
+        beverages: 'Beverage',
+        dessert: 'Dessert',
+        desserts: 'Dessert',
+        'waiter service': 'Waiter service',
+        venue: 'Venue',
+        'customer remarks': 'Customer remarks',
+        note: 'Note',
+        notes: 'Note',
+        general: 'General'
+      }
+
+      if (!normalizedCategory) return 'General'
+      return categoryMap[normalizedCategory] || this.toTitleCase(normalizedCategory)
+    },
+    toTitleCase(text) {
+      return String(text || '')
+        .split(' ')
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    },
+    shouldUseNumberedRequirements(categoryName) {
+      const normalizedCategory = this.normalizeRequirementCategory(categoryName).toLowerCase()
+
+      const numberedCategories = new Set([
+        'rice',
+        'main dish',
+        'side dish',
+        'beverage',
+        'dessert'
+      ])
+
+      return numberedCategories.has(normalizedCategory)
+    },
+    isSingleLineRequirementCategory(categoryName) {
+      const normalizedCategory = this.normalizeRequirementCategory(categoryName).toLowerCase()
+      return normalizedCategory === 'waiter service' || normalizedCategory === 'venue'
+    },
+    getSingleLineRequirement(group) {
+      if (!group || !Array.isArray(group.items) || group.items.length === 0) {
+        return '-'
+      }
+      return group.items.join(' ').replace(/\s+/g, ' ').trim()
     },
     async acceptQuotation(quotation) {
       if (confirm('Accept this quotation and add to cart for checkout?')) {
@@ -762,6 +1136,12 @@ export default {
   align-items: center;
 }
 
+.card-main-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .btn-details {
   background: transparent;
   border: none;
@@ -777,6 +1157,22 @@ export default {
   color: #334155;
 }
 
+.btn-view-pdf {
+  background: #e2e8f0;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-view-pdf:hover {
+  background: #cbd5e1;
+}
+
 .btn-xs-accept {
   background: #2563eb;
   color: white;
@@ -788,21 +1184,179 @@ export default {
   cursor: pointer;
 }
 
-/* Expanded Card */
-.card-expanded {
+.btn-download-pdf {
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-download-pdf:hover {
+  background: #1e293b;
+}
+
+.details-modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.details-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #f8fafc;
+}
+
+.details-modal-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.details-subtitle {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.details-modal-body {
   padding: 20px;
+  overflow-y: auto;
+  background: #f8fafc;
+}
+
+.details-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
   border-top: 1px solid #e2e8f0;
-  background: #fafafa;
-  animation: slideDown 0.3s ease-out;
+  background: #ffffff;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.btn-close-details {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.expanded-content {
-  font-size: 0.95rem;
+.grouped-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.details-category {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.details-list {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+}
+
+.detail-key {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-val {
+  color: #0f172a;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.detail-strong {
+  font-weight: 700;
+}
+
+.requirements-grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.req-category {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.req-cat-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.req-list {
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.req-list.numbered {
+  padding-left: 20px;
+  list-style-type: decimal;
+}
+
+.req-list.normal {
+  padding-left: 16px;
+  list-style-type: disc;
+}
+
+.req-list li {
+  margin-bottom: 4px;
+}
+
+.req-list li:last-child {
+  margin-bottom: 0;
+}
+
+.req-single-line {
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.requirements-empty {
+  text-align: left;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 .section-title {
@@ -813,6 +1367,23 @@ export default {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.section-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .section-title:first-child {
@@ -829,7 +1400,7 @@ export default {
   background: #eff6ff;
   border-left: 3px solid #3b82f6;
   padding: 12px;
-  margin: 16px 0;
+  margin: 0;
   border-radius: 0 4px 4px 0;
 }
 
@@ -1032,6 +1603,27 @@ export default {
   
   .quotations-grid {
     grid-template-columns: 1fr;
+  }
+
+  .details-modal-content {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+
+  .details-modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .btn-close-details,
+  .btn-reject-full,
+  .btn-accept-full,
+  .btn-proceed-full {
+    width: 100%;
+  }
+
+  .detail-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }
 </style>

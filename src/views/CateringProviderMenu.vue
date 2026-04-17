@@ -67,13 +67,39 @@
               <span class="amount">{{ pkg.price?.toFixed(2) }}</span>
               <span class="per-pax">/ pax</span>
             </div>
+            <div
+              v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0"
+              class="helper-text"
+            >
+              Discount: {{ Number(pkg.discountMinPax) }}+ pax at RM {{ Number(pkg.discountedPrice).toFixed(2) }} / pax
+            </div>
             
             <p class="pkg-desc">{{ pkg.description || 'No description provided.' }}</p>
             
             <div class="pkg-meta">
               <div class="meta-item">
-                <span class="label">Max Pax</span>
-                <span class="value">{{ pkg.maxPax }}</span>
+                <span class="label">Min Pax</span>
+                <span class="value">{{ pkg.minPax || pkg.maxPax || 1 }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="label">Waiters</span>
+                <span class="value">{{ pkg.waitersAvailable ? `${pkg.waiterQuantity || 0} included` : 'Not available' }}</span>
+              </div>
+              <div class="meta-item" v-if="pkg.waitersAvailable">
+                <span class="label">Waiter Fee</span>
+                <span class="value">RM {{ Number(pkg.waiterFee || 0).toFixed(2) }} each</span>
+              </div>
+              <div class="meta-item">
+                <span class="label">Venue</span>
+                <span class="value">{{ pkg.venueAvailable ? `Included option (RM ${Number(pkg.venueFee || 0).toFixed(2)})` : 'Not available' }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="label">Food Limits</span>
+                <span class="value">M {{ pkg.mainDishLimit || 8 }} • S {{ pkg.sideDishLimit || 5 }} • B {{ pkg.beverageLimit || 3 }} • D {{ pkg.dessertLimit || 3 }}</span>
+              </div>
+              <div class="meta-item" v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0">
+                <span class="label">Bulk Discount</span>
+                <span class="value">{{ Number(pkg.discountMinPax) }}+ pax → RM {{ Number(pkg.discountedPrice).toFixed(2) }}/pax</span>
               </div>
             </div>
 
@@ -266,8 +292,34 @@
                   <input v-model.number="packageForm.price" type="number" step="0.01" required class="form-input" />
                 </div>
                 <div class="form-group half">
-                  <label>Max Pax</label>
-                  <input v-model.number="packageForm.maxPax" type="number" class="form-input" />
+                  <label>Min Pax</label>
+                  <input v-model.number="packageForm.minPax" type="number" min="1" class="form-input" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Bulk Pax Discount</label>
+                <div class="waiter-option-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="packageForm.discountEnabled">
+                    <span>Enable discounted per-pax price above a pax threshold</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-row" v-if="packageForm.discountEnabled">
+                <div class="form-group half">
+                  <label>Discount Starts At (Pax)</label>
+                  <input
+                    v-model.number="packageForm.discountMinPax"
+                    type="number"
+                    :min="Math.max(2, Number(packageForm.minPax) || 1)"
+                    class="form-input"
+                  />
+                </div>
+                <div class="form-group half">
+                  <label>Discounted Price per Pax (RM)</label>
+                  <input v-model.number="packageForm.discountedPrice" type="number" min="0" step="0.01" class="form-input" />
                 </div>
               </div>
 
@@ -290,6 +342,68 @@
                 <label>Package Image (optional)</label>
                 <input type="file" accept="image/*" @change="onPackageImageChange" class="form-input" />
                 <small v-if="packageForm.image" class="helper-text">Current image attached.</small>
+              </div>
+
+              <div class="form-group">
+                <label>Waiter Service</label>
+                <div class="waiter-option-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="packageForm.waitersAvailable">
+                    <span>Enable waiter service for this package</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" v-if="packageForm.waitersAvailable">
+                <label>Waiter Quantity</label>
+                <input v-model.number="packageForm.waiterQuantity" type="number" min="1" class="form-input" />
+                <small class="helper-text">Customers can optionally choose this waiter service.</small>
+              </div>
+
+              <div class="form-group" v-if="packageForm.waitersAvailable">
+                <label>Fee Per Waiter (RM)</label>
+                <input v-model.number="packageForm.waiterFee" type="number" min="0" step="0.01" class="form-input" />
+                <small class="helper-text">This fee is added only when customer ticks waiter service.</small>
+              </div>
+
+              <div class="form-group">
+                <label>Venue Option</label>
+                <div class="waiter-option-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="packageForm.venueAvailable">
+                    <span>Allow customer to add venue for this package</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" v-if="packageForm.venueAvailable">
+                <label>Venue Price (RM)</label>
+                <input v-model.number="packageForm.venueFee" type="number" min="0" step="0.01" class="form-input" />
+                <small class="helper-text">This venue fee is added only when customer selects venue.</small>
+              </div>
+
+              <div class="form-group">
+                <label>Food Selection Limits (per category)</label>
+                <div class="form-row">
+                  <div class="form-group half">
+                    <label>Main Dish Limit</label>
+                    <input v-model.number="packageForm.mainDishLimit" type="number" min="1" class="form-input" />
+                  </div>
+                  <div class="form-group half">
+                    <label>Side Dish Limit</label>
+                    <input v-model.number="packageForm.sideDishLimit" type="number" min="1" class="form-input" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group half">
+                    <label>Beverage Limit</label>
+                    <input v-model.number="packageForm.beverageLimit" type="number" min="1" class="form-input" />
+                  </div>
+                  <div class="form-group half">
+                    <label>Dessert Limit</label>
+                    <input v-model.number="packageForm.dessertLimit" type="number" min="1" class="form-input" />
+                  </div>
+                </div>
               </div>
             </form>
           </div>
@@ -377,10 +491,22 @@ export default {
         name: '',
         price: 0,
         description: '',
-        maxPax: 100,
+        minPax: 1,
+        discountEnabled: false,
+        discountMinPax: null,
+        discountedPrice: null,
         category: 'basic',
         image: '',
-        imageFile: null
+        imageFile: null,
+        waitersAvailable: false,
+        waiterQuantity: 1,
+        waiterFee: 0,
+        venueAvailable: false,
+        venueFee: 0,
+        mainDishLimit: 8,
+        sideDishLimit: 5,
+        beverageLimit: 3,
+        dessertLimit: 3
       },
       foodForm: {
         name: '',
@@ -440,7 +566,27 @@ export default {
   methods: {
     openPackageModal() {
       this.editingPackage = null
-      this.packageForm = { name: '', price: 0, description: '', maxPax: 100, category: 'basic', image: '', imageFile: null }
+      this.packageForm = {
+        name: '',
+        price: 0,
+        description: '',
+        minPax: 1,
+        discountEnabled: false,
+        discountMinPax: null,
+        discountedPrice: null,
+        category: 'basic',
+        image: '',
+        imageFile: null,
+        waitersAvailable: false,
+        waiterQuantity: 1,
+        waiterFee: 0,
+        venueAvailable: false,
+        venueFee: 0,
+        mainDishLimit: 8,
+        sideDishLimit: 5,
+        beverageLimit: 3,
+        dessertLimit: 3
+      }
       this.showAddPackage = true
     },
     editPackage(pkg) {
@@ -448,7 +594,20 @@ export default {
       this.packageForm = {
         ...pkg,
         image: pkg.image || '',
-        imageFile: null
+        imageFile: null,
+        minPax: Number(pkg.minPax) > 0 ? Number(pkg.minPax) : (Number(pkg.maxPax) > 0 ? Number(pkg.maxPax) : 1),
+        discountEnabled: !!pkg.discountEnabled,
+        discountMinPax: Number(pkg.discountMinPax) > 0 ? Number(pkg.discountMinPax) : null,
+        discountedPrice: Number(pkg.discountedPrice) >= 0 ? Number(pkg.discountedPrice) : null,
+        waitersAvailable: !!pkg.waitersAvailable,
+        waiterQuantity: Number(pkg.waiterQuantity) > 0 ? Number(pkg.waiterQuantity) : 1,
+        waiterFee: Number(pkg.waiterFee) >= 0 ? Number(pkg.waiterFee) : 0,
+        venueAvailable: !!pkg.venueAvailable,
+        venueFee: Number(pkg.venueFee) >= 0 ? Number(pkg.venueFee) : 0,
+        mainDishLimit: Number(pkg.mainDishLimit) > 0 ? Number(pkg.mainDishLimit) : 8,
+        sideDishLimit: Number(pkg.sideDishLimit) > 0 ? Number(pkg.sideDishLimit) : 5,
+        beverageLimit: Number(pkg.beverageLimit) > 0 ? Number(pkg.beverageLimit) : 3,
+        dessertLimit: Number(pkg.dessertLimit) > 0 ? Number(pkg.dessertLimit) : 3
       }
       this.showAddPackage = true
     },
@@ -466,13 +625,50 @@ export default {
       const menuStore = useMenuStore()
       const authStore = useAuthStore()
       try {
+        const basePrice = Math.max(0, Number(this.packageForm.price) || 0)
+        const minPax = Math.max(1, Number(this.packageForm.minPax) || 1)
+        const hasDiscount = !!this.packageForm.discountEnabled
+        const discountMinPax = hasDiscount
+          ? Math.max(minPax, Number(this.packageForm.discountMinPax) || minPax)
+          : null
+        const discountedPrice = hasDiscount
+          ? Math.max(0, Number(this.packageForm.discountedPrice))
+          : null
+
+        if (hasDiscount && !Number.isFinite(discountedPrice)) {
+          alert('Please enter a valid discounted price.')
+          return
+        }
+        if (hasDiscount && discountedPrice >= basePrice) {
+          alert('Discounted price must be lower than normal price per pax.')
+          return
+        }
+
         const payload = {
           name: this.packageForm.name,
-          price: this.packageForm.price,
+          price: basePrice,
           description: this.packageForm.description,
-          maxPax: this.packageForm.maxPax,
+          minPax,
+          discountEnabled: hasDiscount,
+          discountMinPax,
+          discountedPrice,
           category: this.packageForm.category,
-          image: this.packageForm.image || null
+          image: this.packageForm.image || null,
+          waitersAvailable: !!this.packageForm.waitersAvailable,
+          waiterQuantity: this.packageForm.waitersAvailable
+            ? Math.max(1, Number(this.packageForm.waiterQuantity) || 1)
+            : 0,
+          waiterFee: this.packageForm.waitersAvailable
+            ? Math.max(0, Number(this.packageForm.waiterFee) || 0)
+            : 0,
+          venueAvailable: !!this.packageForm.venueAvailable,
+          venueFee: this.packageForm.venueAvailable
+            ? Math.max(0, Number(this.packageForm.venueFee) || 0)
+            : 0,
+          mainDishLimit: Math.max(1, Number(this.packageForm.mainDishLimit) || 8),
+          sideDishLimit: Math.max(1, Number(this.packageForm.sideDishLimit) || 5),
+          beverageLimit: Math.max(1, Number(this.packageForm.beverageLimit) || 3),
+          dessertLimit: Math.max(1, Number(this.packageForm.dessertLimit) || 3)
         }
 
         if (this.packageForm.imageFile) {
@@ -492,7 +688,27 @@ export default {
     closePackageModal() {
       this.showAddPackage = false
       this.editingPackage = null
-      this.packageForm = { name: '', price: 0, description: '', maxPax: 100, category: 'basic', image: '', imageFile: null }
+      this.packageForm = {
+        name: '',
+        price: 0,
+        description: '',
+        minPax: 1,
+        discountEnabled: false,
+        discountMinPax: null,
+        discountedPrice: null,
+        category: 'basic',
+        image: '',
+        imageFile: null,
+        waitersAvailable: false,
+        waiterQuantity: 1,
+        waiterFee: 0,
+        venueAvailable: false,
+        venueFee: 0,
+        mainDishLimit: 8,
+        sideDishLimit: 5,
+        beverageLimit: 3,
+        dessertLimit: 3
+      }
     },
     onPackageImageChange(event) {
       const file = event.target.files?.[0] || null
@@ -1130,6 +1346,13 @@ input:checked + .slider:before { transform: translateX(16px); }
   font-size: 14px;
   color: #334155;
   cursor: pointer;
+}
+
+.waiter-option-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
 }
 
 .checkbox-label input {
