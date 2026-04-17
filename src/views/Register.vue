@@ -13,9 +13,8 @@
     <!-- Visual Side (Left) -->
     <div class="visual-side">
       <div class="brand-content">
-        <div class="logo-area">
-          <div class="logo-icon">CMS</div>
-          <h1>Join the Platform</h1>
+        <div class="brand-intro">
+          <img src="@/assets/cmslogo.png" alt="CaterFlow Logo" class="brand-logo" />
         </div>
         
         <div class="visual-graphic">
@@ -27,11 +26,14 @@
              </div>
              <div class="window-body">
                 <div class="row header-row"></div>
-                <div class="grid-preview">
-                   <div class="card c1"></div>
-                   <div class="card c2"></div>
-                   <div class="card c3"></div>
-                   <div class="card c4"></div>
+                <div class="row r1"></div>
+                <div class="row r2"></div>
+                <div class="row r3"></div>
+                <div class="chart-area">
+                   <div class="bar b1"></div>
+                   <div class="bar b2"></div>
+                   <div class="bar b3"></div>
+                   <div class="bar b4"></div>
                 </div>
              </div>
           </div>
@@ -39,13 +41,13 @@
 
         <div class="feature-pills">
           <div class="pill">
-            <i class="fas fa-rocket"></i> Instant Setup
+            <i class="fas fa-boxes"></i> Smart Inventory
           </div>
           <div class="pill">
-            <i class="fas fa-shield-alt"></i> Secure
+            <i class="fas fa-chart-line"></i> Analytics
           </div>
           <div class="pill">
-            <i class="fas fa-chart-pie"></i> Analytics
+            <i class="fas fa-truck"></i> Logistics
           </div>
         </div>
       </div>
@@ -341,7 +343,7 @@ export default {
 
 /* --- Visual Side (Left) --- */
 .visual-side {
-  width: 40%;
+  width: 45%;
   background: #0f172a;
   position: relative;
   display: flex;
@@ -356,53 +358,44 @@ export default {
 .brand-content {
   position: relative;
   z-index: 10;
-  max-width: 480px;
+  max-width: 560px;
   width: 100%;
-}
-
-.logo-area {
-  margin-bottom: 60px;
-}
-
-.logo-icon {
-  width: 48px;
-  height: 48px;
-  background: #3b82f6;
-  border-radius: 12px;
   display: flex;
+  flex-direction: column;
   align-items: center;
+}
+
+.brand-intro {
+  width: 100%;
+  display: flex;
   justify-content: center;
-  font-weight: 800;
-  font-size: 14px;
-  margin-bottom: 24px;
-  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+  margin-bottom: 14px;
 }
 
-.brand-content h1 {
-  font-size: 42px;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-bottom: 12px;
-  letter-spacing: -1px;
-  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.brand-logo {
+  width: min(560px, 100%);
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 30px rgba(15, 23, 42, 0.42));
 }
 
-/* Visualization (Mock Grid) */
+/* Visualization (Mock Dashboard) */
 .visual-graphic {
-  margin: 40px 0;
+  width: 100%;
+  margin: 14px 0 24px;
   perspective: 1000px;
 }
 
 .mock-window {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.76), rgba(15, 23, 42, 0.7));
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 28px 56px -18px rgba(0, 0, 0, 0.52);
   backdrop-filter: blur(10px);
-  transform: rotateY(5deg) rotateX(5deg);
+  transform: rotateY(4deg) rotateX(4deg);
   transition: transform 0.5s ease;
 }
 
@@ -421,37 +414,47 @@ export default {
 .yellow { background: #f59e0b; }
 .green { background: #10b981; }
 
-.grid-preview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.window-body { display: flex; flex-direction: column; gap: 12px; }
+.row { height: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; }
+.header-row { width: 40%; background: rgba(59, 130, 246, 0.5); margin-bottom: 8px; }
+.r1 { width: 80%; }
+.r2 { width: 60%; }
+.r3 { width: 70%; }
+
+.chart-area {
+  display: flex;
   gap: 12px;
+  height: 60px;
+  align-items: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.card {
-  height: 80px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-.c1 { background: #3b82f6; opacity: 0.2; }
+.bar { width: 20%; background: #3b82f6; border-radius: 4px 4px 0 0; opacity: 0.8; }
+.b1 { height: 40%; }
+.b2 { height: 70%; background: #8b5cf6; }
+.b3 { height: 50%; }
+.b4 { height: 85%; background: #10b981; }
 
 /* Feature Pills */
 .feature-pills {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .pill {
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 100px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .overlay-pattern {
@@ -465,7 +468,7 @@ export default {
 
 /* --- Form Side (Right) --- */
 .form-side {
-  width: 60%;
+  width: 55%;
   padding: 40px;
   overflow-y: auto;
   display: flex;
