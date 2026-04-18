@@ -67,7 +67,50 @@ router.post('/', authenticate, async (req, res) => {
     await quotation.save();
     
     const populatedQuotation = await Quotation.findById(quotation._id)
-      .populate('userId', 'username email');
+      .populate('userId', 'username email')
+      .populate('providerId', 'businessName email');
+
+    const customerEmail = populatedQuotation?.email || populatedQuotation?.userId?.email;
+    const customerName = populatedQuotation?.customerName || populatedQuotation?.userId?.username || 'Customer';
+    const providerEmail = populatedQuotation?.providerId?.email;
+    const providerName = populatedQuotation?.providerId?.businessName || 'Provider';
+
+    await Promise.all([
+      sendEmail({
+        to: customerEmail,
+        subject: `Quotation Request Received - ${populatedQuotation?.quotationId || 'Quotation'}`,
+        text: `Hi ${customerName},\n\nYour quotation request ${populatedQuotation?.quotationId || ''} has been submitted successfully.\nStatus: PENDING\n\nWe will update you once the quotation is reviewed.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+            <h2 style="margin-bottom: 8px;">Quotation Request Received</h2>
+            <p>Hi ${customerName},</p>
+            <p>Your quotation request <strong>${populatedQuotation?.quotationId || '-'}</strong> has been submitted successfully.</p>
+            <ul>
+              <li><strong>Status:</strong> PENDING</li>
+              <li><strong>Provider:</strong> ${providerName}</li>
+            </ul>
+            <p>We will notify you once the quotation is reviewed.</p>
+          </div>
+        `
+      }),
+      sendEmail({
+        to: providerEmail,
+        subject: `New Quotation Request - ${populatedQuotation?.quotationId || 'Quotation'}`,
+        text: `Hi ${providerName},\n\nA new quotation request ${populatedQuotation?.quotationId || ''} has been submitted.\nCustomer: ${customerName}\nPlease log in to review and prepare the quotation.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+            <h2 style="margin-bottom: 8px;">New Quotation Request</h2>
+            <p>Hi ${providerName},</p>
+            <p>A new quotation request <strong>${populatedQuotation?.quotationId || '-'}</strong> has been submitted.</p>
+            <ul>
+              <li><strong>Customer:</strong> ${customerName}</li>
+              <li><strong>Status:</strong> PENDING</li>
+            </ul>
+            <p>Please log in to review and prepare the quotation.</p>
+          </div>
+        `
+      })
+    ]);
     
     res.status(201).json({ 
       message: 'Quotation request submitted successfully', 
