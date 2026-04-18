@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth'
 // Public Views
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+import ForgotPassword from '../views/ForgotPassword.vue'
 import ResetPassword from '../views/ResetPassword.vue'
 
 // Customer Views
@@ -61,6 +62,12 @@ const routes = [
     path: '/register', 
     name: 'Register', 
     component: Register,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: ForgotPassword,
     meta: { requiresAuth: false }
   },
   {

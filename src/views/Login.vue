@@ -129,41 +129,11 @@
       </div>
     </div>
 
-    <div v-if="showForgotModal" class="modal-overlay" @click="closeForgotModal">
-      <div class="modal-card" @click.stop>
-        <h3>Reset Password</h3>
-        <p>Enter your account email. We’ll send you a reset link.</p>
-
-        <div class="input-group compact">
-          <label>Email</label>
-          <input v-model="forgotEmail" type="email" placeholder="you@example.com" required />
-        </div>
-
-        <div v-if="forgotError" class="error-alert compact-alert">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          {{ forgotError }}
-        </div>
-
-        <div v-if="forgotSuccess" class="success-alert compact-alert">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          {{ forgotSuccess }}
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="secondary-btn" @click="closeForgotModal">Cancel</button>
-          <button type="button" class="submit-btn small" :disabled="forgotLoading" @click="submitForgotPassword">
-            <span v-if="forgotLoading" class="spinner"></span>
-            <span v-else>Send Reset Link</span>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
 import { useAuthStore } from '@/stores/auth'
-import { authAPI } from '@/services/api'
 
 export default {
   data() {
@@ -171,12 +141,7 @@ export default {
       username: '',
       password: '',
       error: '',
-      loading: false,
-      showForgotModal: false,
-      forgotEmail: '',
-      forgotLoading: false,
-      forgotError: '',
-      forgotSuccess: ''
+      loading: false
     }
   },
   methods: {
@@ -219,38 +184,10 @@ export default {
       }
     },
     forgotPassword() {
-      this.showForgotModal = true
-      this.forgotError = ''
-      this.forgotSuccess = ''
-      if (!this.forgotEmail && this.username && String(this.username).includes('@')) {
-        this.forgotEmail = this.username
-      }
-    },
-    closeForgotModal() {
-      this.showForgotModal = false
-      this.forgotLoading = false
-      this.forgotError = ''
-      this.forgotSuccess = ''
-    },
-    async submitForgotPassword() {
-      this.forgotError = ''
-      this.forgotSuccess = ''
-
-      const email = String(this.forgotEmail || '').trim()
-      if (!email) {
-        this.forgotError = 'Please enter your email address.'
-        return
-      }
-
-      try {
-        this.forgotLoading = true
-        const response = await authAPI.forgotPassword(email)
-        this.forgotSuccess = response?.data?.message || 'Reset link sent. Please check your email.'
-      } catch (error) {
-        this.forgotError = error?.response?.data?.message || 'Failed to send reset link. Please try again.'
-      } finally {
-        this.forgotLoading = false
-      }
+      const email = this.username && String(this.username).includes('@')
+        ? String(this.username).trim()
+        : ''
+      this.$router.push({ path: '/forgot-password', query: email ? { email } : {} })
     },
     registerAccount() {
       this.$router.push('/register')
@@ -543,73 +480,6 @@ input:focus + .input-icon,
 .text-link:hover {
   color: #3b82f6;
   text-decoration-color: #3b82f6;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.62);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 1000;
-}
-
-.modal-card {
-  width: 100%;
-  max-width: 440px;
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  padding: 24px;
-  box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.4);
-}
-
-.modal-card h3 {
-  margin: 0 0 8px;
-  color: #0f172a;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.modal-card p {
-  margin: 0 0 18px;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.input-group.compact {
-  margin-bottom: 14px;
-}
-
-.compact-alert {
-  margin-bottom: 14px;
-}
-
-.success-alert {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 6px;
-}
-
-.submit-btn.small {
-  width: auto;
-  padding: 12px 16px;
-  font-size: 14px;
 }
 
 /* Dividers & Errors */
