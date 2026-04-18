@@ -1,23 +1,28 @@
 import sgMail from '@sendgrid/mail';
 
-const sendGridApiKey = process.env.SENDGRID_API_KEY;
-const fromEmail = process.env.EMAIL_FROM;
-const appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:5173';
-
-const isConfigured = Boolean(sendGridApiKey && fromEmail);
-
-if (sendGridApiKey) {
-  sgMail.setApiKey(sendGridApiKey);
-}
-
+// 🎯 将底层发送逻辑封装好，在执行的瞬间读取环境变量
 const safeSend = async (message) => {
+  // 【关键修复】：在函数内部读取！此时系统肯定已经加载完 .env 了
+  const sendGridApiKey = process.env.SENDGRID_API_KEY;
+  const fromEmail = process.env.EMAIL_FROM;
+  const isConfigured = Boolean(sendGridApiKey && fromEmail);
+
   if (!isConfigured) {
     console.warn('📧 Email skipped: SENDGRID_API_KEY or EMAIL_FROM not configured');
     return { skipped: true };
   }
 
+  // 每次发送前确保 Key 是最新的
+  sgMail.setApiKey(sendGridApiKey);
+
+  // 确保邮件包含发件人
+  const finalMessage = {
+    ...message,
+    from: message.from || fromEmail
+  };
+
   try {
-    const [providerResponse] = await sgMail.send(message);
+    const [providerResponse] = await sgMail.send(finalMessage);
     const messageId = providerResponse?.headers?.['x-message-id'] || providerResponse?.headers?.['X-Message-Id'];
     return {
       sent: true,
@@ -41,7 +46,6 @@ export const sendEmail = async ({ to, subject, text, html }) => {
 
   return safeSend({
     to,
-    from: fromEmail,
     subject,
     text,
     html
@@ -167,6 +171,8 @@ export const sendOrderStatusEmail = async ({
 };
 
 export const sendPasswordResetEmail = async ({ to, fullName, resetToken }) => {
+  // 【关键修复】：也是在函数被调用时读取
+  const appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:5173';
   const resetLink = `${appBaseUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
   return sendEmail({
@@ -191,7 +197,8 @@ export const sendPasswordResetEmail = async ({ to, fullName, resetToken }) => {
 };
 
 export const emailConfigStatus = () => ({
-  configured: isConfigured,
-  hasApiKey: Boolean(sendGridApiKey),
-  hasFromEmail: Boolean(fromEmail)
+  // 【关键修复】：实时读取状态，而不是读取加载时的死状态
+  configured: Boolean(process.env.SENDGRID_API_KEY && process.env.EMAIL_FROM),
+  hasApiKey: Boolean(process.env.SENDGRID_API_KEY),
+  hasFromEmail: Boolean(process.env.EMAIL_FROM)
 });
