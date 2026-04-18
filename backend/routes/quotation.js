@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import Quotation from '../models/Quotation.js';
 import { authenticate, isAdmin } from '../middleware/auth.js';
+import { sendEmail, sendQuotationStatusEmail } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -135,11 +136,22 @@ router.put('/:id', authenticate, isAdmin, async (req, res) => {
       req.params.id,
       req.body,
       { new: true }
-    ).populate('userId', 'username email');
+    )
+      .populate('userId', 'username email')
+      .populate('providerId', 'businessName email');
 
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
     }
+
+    await sendQuotationStatusEmail({
+      customerEmail: quotation?.email || quotation?.userId?.email,
+      customerName: quotation?.customerName || quotation?.userId?.username,
+      providerName: quotation?.providerId?.businessName,
+      quotationId: quotation?.quotationId,
+      status: quotation?.status,
+      quotedAmount: quotation?.quotedAmount
+    });
 
     res.json({ message: 'Quotation updated', quotation });
   } catch (error) {
@@ -171,6 +183,13 @@ router.put('/:id/accept', authenticate, async (req, res) => {
       .populate('providerId', 'businessName email phone')
       .populate('packageId', 'name price');
 
+    await sendEmail({
+      to: updatedQuotation?.providerId?.email,
+      subject: `Quotation Accepted - ${updatedQuotation?.quotationId || 'Quotation'}`,
+      text: `Your quotation ${updatedQuotation?.quotationId || ''} has been accepted by the customer.`,
+      html: `<p>Your quotation <strong>${updatedQuotation?.quotationId || '-'}</strong> has been accepted by the customer.</p>`
+    });
+
     res.json({ message: 'Quotation accepted', quotation: updatedQuotation });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -200,6 +219,13 @@ router.put('/:id/reject', authenticate, async (req, res) => {
       .populate('userId', 'username email')
       .populate('providerId', 'businessName email phone')
       .populate('packageId', 'name price');
+
+    await sendEmail({
+      to: updatedQuotation?.providerId?.email,
+      subject: `Quotation Rejected - ${updatedQuotation?.quotationId || 'Quotation'}`,
+      text: `Your quotation ${updatedQuotation?.quotationId || ''} has been rejected by the customer.`,
+      html: `<p>Your quotation <strong>${updatedQuotation?.quotationId || '-'}</strong> has been rejected by the customer.</p>`
+    });
 
     res.json({ message: 'Quotation rejected', quotation: updatedQuotation });
   } catch (error) {

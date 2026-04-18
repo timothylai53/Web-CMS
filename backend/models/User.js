@@ -146,6 +146,14 @@ const userSchema = new mongoose.Schema({
       dashboard: true
     }
   },
+  resetPasswordTokenHash: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpiresAt: {
+    type: Date,
+    default: null
+  },
   
   // Pending Approval Fields (for sensitive changes)
   businessNamePending: {

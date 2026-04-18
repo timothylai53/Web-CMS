@@ -1,6 +1,7 @@
 import express from 'express';
 import Order from '../models/Order.js';
 import { authenticate, isAdmin } from '../middleware/auth.js';
+import { sendOrderCreatedEmails, sendOrderStatusEmail } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -18,6 +19,16 @@ router.post('/', authenticate, async (req, res) => {
       .populate('userId', 'username email')
       .populate('packageId')
       .populate('providerId', 'businessName email');
+
+    await sendOrderCreatedEmails({
+      customerEmail: populatedOrder?.customerEmail || populatedOrder?.userId?.email,
+      customerName: populatedOrder?.customerName || populatedOrder?.userId?.username,
+      providerEmail: populatedOrder?.providerId?.email,
+      providerName: populatedOrder?.providerId?.businessName,
+      orderNumber: populatedOrder?.orderNumber,
+      totalAmount: populatedOrder?.totalAmount,
+      eventDate: populatedOrder?.eventDate
+    });
     
     res.status(201).json({ 
       message: 'Order created successfully', 
@@ -97,6 +108,13 @@ router.put('/:id/status', authenticate, isAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    await sendOrderStatusEmail({
+      customerEmail: order?.customerEmail || order?.userId?.email,
+      customerName: order?.customerName || order?.userId?.username,
+      orderNumber: order?.orderNumber,
+      status: order?.status
+    });
+
     res.json({ message: 'Order status updated', order });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -117,6 +135,13 @@ router.put('/:id/payment', authenticate, isAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    await sendOrderStatusEmail({
+      customerEmail: order?.customerEmail || order?.userId?.email,
+      customerName: order?.customerName || order?.userId?.username,
+      orderNumber: order?.orderNumber,
+      paymentStatus: order?.paymentStatus
+    });
+
     res.json({ message: 'Payment status updated', order });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -136,6 +161,13 @@ router.put('/:id/delivery', authenticate, isAdmin, async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+
+    await sendOrderStatusEmail({
+      customerEmail: order?.customerEmail || order?.userId?.email,
+      customerName: order?.customerName || order?.userId?.username,
+      orderNumber: order?.orderNumber,
+      deliveryStatus: order?.deliveryStatus
+    });
 
     res.json({ message: 'Delivery status updated', order });
   } catch (error) {
