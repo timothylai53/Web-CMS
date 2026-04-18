@@ -17,12 +17,22 @@ const safeSend = async (message) => {
   }
 
   try {
-    await sgMail.send(message);
-    return { sent: true };
+    const [providerResponse] = await sgMail.send(message);
+    const messageId = providerResponse?.headers?.['x-message-id'] || providerResponse?.headers?.['X-Message-Id'];
+    return {
+      sent: true,
+      statusCode: providerResponse?.statusCode,
+      messageId
+    };
   } catch (error) {
     const providerMessage = error?.response?.body?.errors?.[0]?.message;
-    console.error('📧 Email send error:', providerMessage || error.message);
-    return { sent: false, error: providerMessage || error.message };
+    const providerCode = error?.code || error?.response?.statusCode;
+    console.error('📧 Email send error:', providerCode || '', providerMessage || error.message);
+    return {
+      sent: false,
+      code: providerCode,
+      error: providerMessage || error.message
+    };
   }
 };
 

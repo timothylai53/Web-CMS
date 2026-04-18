@@ -160,11 +160,27 @@ router.post('/forgot-password', async (req, res) => {
       user.resetPasswordExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
       await user.save();
 
-      await sendPasswordResetEmail({
+      const emailResult = await sendPasswordResetEmail({
         to: user.email,
         fullName: user.fullName || user.username,
         resetToken
       });
+
+      if (emailResult?.sent) {
+        console.log('📧 Password reset email queued:', {
+          to: user.email,
+          messageId: emailResult.messageId || null,
+          statusCode: emailResult.statusCode || null
+        });
+      } else {
+        console.warn('📧 Password reset email not sent:', {
+          to: user.email,
+          code: emailResult?.code || null,
+          error: emailResult?.error || null
+        });
+      }
+    } else {
+      console.log('📧 Forgot password requested for non-registered email');
     }
 
     return res.json({
