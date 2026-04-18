@@ -17,8 +17,6 @@ import providerRoutes from './routes/provider.js';
 import inventoryRoutes from './routes/inventory.js';
 import chatRoutes from './routes/chat.js';
 
-// Load environment variables
-dotenv.config();
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
