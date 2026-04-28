@@ -329,10 +329,22 @@ export default {
           if (!this.cardDetails.name) throw new Error("Please enter the cardholder name.");
 
           // Request client secret from your Node.js backend
-          const amountInCents = Math.round(this.orderData.total * 100); 
-          const response = await axios.post('http://localhost:5000/api/payment/create-payment-intent', {
-            amount: amountInCents 
-          });
+          // NEW CODE
+          const amountInCents = Math.round(this.orderData.total * 100);
+
+          // Get the token from your auth store or local storage
+          const userToken = authStore.token || localStorage.getItem('token');
+
+          const response = await axios.post('http://localhost:5000/api/payment/create-payment-intent',
+            // 1. The data body
+            { amount: amountInCents },
+            // 2. The security headers!
+            {
+              headers: {
+                Authorization: `Bearer ${userToken}`
+              }
+            }
+          );
 
           // Confirm the card payment securely using Stripe
           const result = await this.stripe.confirmCardPayment(response.data.clientSecret, {
@@ -376,13 +388,13 @@ export default {
           orderPayload.quotationId = this.orderData.quotationId
           orderPayload.isQuotationOrder = true
         }
-        
+
         const order = await ordersStore.createOrder(orderPayload)
 
         // Clear cart and storage
         cartStore.clearCart()
         sessionStorage.removeItem('quotationOrder')
-        
+
         this.isProcessing = false
 
         // Redirect to success page
@@ -416,7 +428,7 @@ export default {
 
     // Initialize Stripe using your Publishable Key
     // IMPORTANT: PASTE YOUR pk_test_... KEY HERE
-    this.stripe = await loadStripe('pk_test_51TQrGhB8ZaIWMBPR0ob61zDhxXT0PWc8JIMAKwJryEdjj9GDmYncICh1MOSY3iLfo1l3zfoQxFGLYyqZBPofULC000edU8MPfx'); 
+    this.stripe = await loadStripe('pk_test_51TQrGhB8ZaIWMBPR0ob61zDhxXT0PWc8JIMAKwJryEdjj9GDmYncICh1MOSY3iLfo1l3zfoQxFGLYyqZBPofULC000edU8MPfx');
     const elements = this.stripe.elements();
 
     // Create the secure Card Element
@@ -435,7 +447,7 @@ export default {
     this.$nextTick(() => {
       if (this.paymentMethod === 'card') {
         this.cardElement.mount('#card-element');
-        
+
         // Show real-time validation errors (like "Your card number is incomplete.")
         this.cardElement.on('change', (event) => {
           const displayError = document.getElementById('card-errors');
