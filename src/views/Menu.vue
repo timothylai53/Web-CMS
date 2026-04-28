@@ -1,14 +1,17 @@
 <template>
   <div class="menu-page">
     <Navbar />
-    
+
     <!-- Custom Notification Toast -->
     <div v-if="notification.show" class="notification-toast" :class="notification.type">
       <div class="notification-icon">
-        <svg v-if="notification.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg v-if="notification.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="12"></line>
           <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -16,7 +19,7 @@
       </div>
       <span>{{ notification.message }}</span>
     </div>
-    
+
     <div class="menu-container">
       <!-- Modern Hero Section -->
       <div class="hero-section">
@@ -33,39 +36,46 @@
           <h3>Available Packages</h3>
         </div>
         <div class="packages-grid">
-          <div 
-            v-for="pkg in packages" 
-            :key="pkg.id" 
-            class="package-card"
-            :class="{ selected: selectedPackage?.id === pkg.id }"
-            @click="selectPackage(pkg)"
-          >
+          <div v-for="pkg in packages" :key="pkg.id" class="package-card"
+            :class="{ selected: selectedPackage?.id === pkg.id }" @click="selectPackage(pkg)">
             <div class="card-banner">
-              <img v-if="pkg.image" :src="resolvePackageImage(pkg.image)" :alt="pkg.name" class="package-banner-image" />
+              <img v-if="pkg.image" :src="resolvePackageImage(pkg.image)" :alt="pkg.name"
+                class="package-banner-image" />
               <div v-else class="package-banner-placeholder">Package Preview</div>
               <span class="provider-badge">{{ pkg.providerId?.businessName || 'Provider' }}</span>
+              <span v-if="isLumpSumPackage(pkg)" class="lumpsum-badge">Special Lump Sum</span>
             </div>
-            
+
             <div class="card-content">
               <h4>{{ pkg.name }}</h4>
-              
+
               <div class="price">
-                RM {{ pkg.price }} <span class="per-pax">/ pax</span>
+                RM {{ pkg.price }}
+                <span v-if="!isLumpSumPackage(pkg)" class="per-pax">/ pax</span>
               </div>
-              <p
-                v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0"
-                class="discount-note"
-              >
-                {{ Number(pkg.discountMinPax) }}+ pax: RM {{ Number(pkg.discountedPrice).toFixed(2) }}/pax
+              <p v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0"
+                class="discount-note">
+                <template v-if="isLumpSumPackage(pkg)">
+                  {{ Number(pkg.discountMinPax) }}+ pax: RM {{ Number(pkg.discountedPrice).toFixed(2) }} total
+                </template>
+                <template v-else>
+                  {{ Number(pkg.discountMinPax) }}+ pax: RM {{ Number(pkg.discountedPrice).toFixed(2) }}/pax
+                </template>
               </p>
-              
+
               <p class="description">{{ pkg.description || 'No description available for this package.' }}</p>
-              
+
               <div class="package-meta">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
                 <span>Minimum {{ pkg.minPax || pkg.maxPax || 1 }} Guests</span>
               </div>
-              
+
               <div class="select-btn-placeholder">
                 {{ selectedPackage?.id === pkg.id ? 'Selected' : 'Select Package' }}
               </div>
@@ -75,34 +85,56 @@
       </div>
 
       <div v-if="selectedPackage" class="order-form">
-        
+
         <!-- Selected Package Info -->
         <div class="selected-package-banner">
-          <div class="banner-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <div class="banner-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="m9 12 2 2 4-4" />
+            </svg></div>
           <div class="banner-info">
             <h4>{{ selectedPackage.name }}</h4>
             <p>
-              RM {{ activePricePerPax.toFixed(2) }} per pax • Minimum {{ selectedPackage.minPax || selectedPackage.maxPax || 1 }} guests
+              RM {{ (isSelectedLumpSum ? activePriceTotal : activePricePerPax).toFixed(2) }}
+              <template v-if="!isSelectedLumpSum"> per pax</template>
+              • Minimum {{ selectedPackage.minPax || selectedPackage.maxPax || 1 }} guests
               <span v-if="isDiscountApplied">(bulk discount applied)</span>
             </p>
-            <p
-              v-if="selectedPackage.discountEnabled && Number(selectedPackage.discountMinPax) > 0 && Number(selectedPackage.discountedPrice) >= 0"
-              class="discount-note"
-            >
-              Bulk discount: {{ Number(selectedPackage.discountMinPax) }}+ pax → RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }}/pax
+            <p v-if="selectedPackage.discountEnabled && Number(selectedPackage.discountMinPax) > 0 && Number(selectedPackage.discountedPrice) >= 0"
+              class="discount-note">
+              <template v-if="isSelectedLumpSum">
+                {{ selectedPackage.minPax }} guests included.
+                Each additional guest: +RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }}
+              </template>
+              <template v-else>
+                Bulk discount: {{ Number(selectedPackage.discountMinPax) }}+ pax → RM {{
+                  Number(selectedPackage.discountedPrice).toFixed(2) }}/pax
+              </template>
             </p>
-            <p v-if="selectedPackage.waitersAvailable" class="waiter-summary-text">Optional waiter service available ({{ selectedPackage.waiterQuantity || 0 }} waiters)</p>
-            <p v-if="selectedPackage.venueAvailable" class="venue-summary-text">Optional venue available (RM {{ Number(selectedPackage.venueFee || 0).toFixed(2) }})</p>
-            <p class="limit-summary-text">Limits — Main: {{ mainDishLimit }}, Side: {{ sideDishLimit }}, Beverage: {{ beverageLimit }}, Dessert: {{ dessertLimit }}</p>
+            <p v-if="selectedPackage.waitersAvailable" class="waiter-summary-text">Optional waiter service available ({{
+              selectedPackage.waiterQuantity || 0 }} waiters)</p>
+            <p v-if="selectedPackage.venueAvailable" class="venue-summary-text">Optional venue available (RM {{
+              Number(selectedPackage.venueFee || 0).toFixed(2) }})</p>
+            <p class="limit-summary-text">Limits — Main: {{ mainDishLimit }}, Side: {{ sideDishLimit }}, Beverage: {{
+              beverageLimit }}, Dessert: {{ dessertLimit }}</p>
           </div>
         </div>
 
         <div v-if="selectedPackage.waitersAvailable" class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg></div>
             <div>
               <h3>Waiter Service</h3>
-              <p class="section-subtitle">Tick if you want waiter service for this package ({{ selectedPackage.waiterQuantity || 0 }} waiters, RM {{ Number(selectedPackage.waiterFee || 0).toFixed(2) }} each).</p>
+              <p class="section-subtitle">Tick if you want waiter service for this package ({{
+                selectedPackage.waiterQuantity
+                || 0 }} waiters, RM {{ Number(selectedPackage.waiterFee || 0).toFixed(2) }} each).</p>
             </div>
           </div>
           <label class="waiter-checkbox-row">
@@ -116,10 +148,17 @@
 
         <div v-if="selectedPackage.venueAvailable" class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"></path><path d="M5 22V8l7-4 7 4v14"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 22h18"></path>
+                <path d="M5 22V8l7-4 7 4v14"></path>
+                <path d="M9 12h6"></path>
+                <path d="M9 16h6"></path>
+              </svg></div>
             <div>
               <h3>Venue Option</h3>
-              <p class="section-subtitle">Tick if you want venue provided by this package (RM {{ Number(selectedPackage.venueFee || 0).toFixed(2) }}).</p>
+              <p class="section-subtitle">Tick if you want venue provided by this package (RM {{
+                Number(selectedPackage.venueFee || 0).toFixed(2) }}).</p>
             </div>
           </div>
           <label class="venue-checkbox-row">
@@ -134,7 +173,13 @@
         <!-- Number of Pax -->
         <div class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg></div>
             <div>
               <h3>Number of Guests</h3>
               <p class="section-subtitle">How many people will you be serving?</p>
@@ -142,16 +187,20 @@
           </div>
           <div class="pax-selector">
             <button type="button" class="pax-btn" @click="numberOfPax = Math.max(1, numberOfPax - 10)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </button>
             <div class="pax-input-wrapper">
-              <input type="number" v-model.number="numberOfPax" min="1" :max="selectedPackage.maxPax" required class="pax-input" />
+              <input type="number" v-model.number="numberOfPax" min="1" :max="selectedPackage.maxPax" required
+                class="pax-input" />
               <span class="pax-label">Guests</span>
             </div>
-            <button type="button" class="pax-btn" @click="numberOfPax = Math.min(selectedPackage.maxPax, numberOfPax + 10)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="pax-btn"
+              @click="numberOfPax = Math.min(selectedPackage.maxPax, numberOfPax + 10)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
@@ -161,26 +210,42 @@
             <span>Package Subtotal</span>
             <strong>RM {{ totalWithWaiter.toFixed(2) }}</strong>
           </div>
-          <p v-if="isDiscountApplied" class="discount-note">Discounted rate applied automatically for current pax.</p>
+
+          <p v-if="isDiscountApplied" class="discount-note">
+            <template v-if="isSelectedLumpSum">
+              {{ selectedPackage.minPax }} guests included. Each additional guest: +RM {{
+                Number(selectedPackage.discountedPrice).toFixed(2) }}
+            </template>
+            <template v-else>
+              Discounted rate applied automatically for current pax.
+            </template>
+          </p>
         </div>
 
         <!-- Rice Selection -->
         <div class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 10 10H2a10 10 0 0 1 10-10Z"/><path d="M14 12v1M10 12v1M12 12v1.5"/><path d="M2 12h20"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 0 1 10 10H2a10 10 0 0 1 10-10Z" />
+                <path d="M14 12v1M10 12v1M12 12v1.5" />
+                <path d="M2 12h20" />
+              </svg></div>
             <div>
               <h3>Rice Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedRice.length === 2, 'selecting': selectedRice.length === 1}">
-                  <span v-if="selectedRice.length === 0">[ 0 / 2 ] Choose Rice</span>
-                  <span v-else-if="selectedRice.length === 1">[ 1 / 2 ] Selecting...</span>
-                  <span v-else>[ 2 / 2 ] Completed ✓</span>
-                </div>
+              <div class="progress-badge"
+                :class="{ 'completed': selectedRice.length === 2, 'selecting': selectedRice.length === 1 }">
+                <span v-if="selectedRice.length === 0">[ 0 / 2 ] Choose Rice</span>
+                <span v-else-if="selectedRice.length === 1">[ 1 / 2 ] Selecting...</span>
+                <span v-else>[ 2 / 2 ] Completed ✓</span>
+              </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="rice in availableRice" :key="rice.id"
-class="selection-card" :class="{ selected: selectedRice.includes(rice.name), disabled: selectedRice.length >= 2 && !selectedRice.includes(rice.name), dim: selectedRice.length > 0 && !selectedRice.includes(rice.name) }">
-              <input type="checkbox" :value="rice.name" v-model="selectedRice" :id="'rice-' + rice.id" class="selection-checkbox" />
+            <label v-for="rice in availableRice" :key="rice.id" class="selection-card"
+              :class="{ selected: selectedRice.includes(rice.name), disabled: selectedRice.length >= 2 && !selectedRice.includes(rice.name), dim: selectedRice.length > 0 && !selectedRice.includes(rice.name) }">
+              <input type="checkbox" :value="rice.name" v-model="selectedRice" :id="'rice-' + rice.id"
+                class="selection-checkbox" />
               <div v-if="rice.image" class="selection-image">
                 <img :src="resolveFoodImage(rice.image)" :alt="rice.name" />
               </div>
@@ -191,7 +256,8 @@ class="selection-card" :class="{ selected: selectedRice.includes(rice.name), dis
             </label>
           </div>
           <p class="warning-note" v-if="selectedRice.length > 2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -203,20 +269,29 @@ class="selection-card" :class="{ selected: selectedRice.includes(rice.name), dis
         <!-- Main Dish Selection -->
         <div class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+                <path d="M7 2v20" />
+                <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+              </svg></div>
             <div>
               <h3>Main Dish Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedFoods.length === mainDishLimit, 'selecting': selectedFoods.length > 0 && selectedFoods.length < mainDishLimit}">
-                  <span v-if="selectedFoods.length === 0">[ 0 / {{ mainDishLimit }} ] Choose Main Dishes</span>
-                  <span v-else-if="selectedFoods.length < mainDishLimit">[ {{ selectedFoods.length }} / {{ mainDishLimit }} ] Selecting...</span>
-                  <span v-else>[ {{ mainDishLimit }} / {{ mainDishLimit }} ] Completed ✓</span>
-                </div>
+              <div class="progress-badge"
+                :class="{ 'completed': selectedFoods.length === mainDishLimit, 'selecting': selectedFoods.length > 0 && selectedFoods.length < mainDishLimit }">
+                <span v-if="selectedFoods.length === 0">[ 0 / {{ mainDishLimit }} ] Choose Main Dishes</span>
+                <span v-else-if="selectedFoods.length < mainDishLimit">[ {{ selectedFoods.length }} / {{ mainDishLimit
+                }} ]
+                  Selecting...</span>
+                <span v-else>[ {{ mainDishLimit }} / {{ mainDishLimit }} ] Completed ✓</span>
+              </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="food in availableMainDishes" :key="food.id"
-class="selection-card" :class="{ selected: selectedFoods.includes(food.name), disabled: selectedFoods.length >= mainDishLimit && !selectedFoods.includes(food.name), dim: selectedFoods.length > 0 && !selectedFoods.includes(food.name) }">
-              <input type="checkbox" :value="food.name" v-model="selectedFoods" :id="'food-' + food.id" class="selection-checkbox" />
+            <label v-for="food in availableMainDishes" :key="food.id" class="selection-card"
+              :class="{ selected: selectedFoods.includes(food.name), disabled: selectedFoods.length >= mainDishLimit && !selectedFoods.includes(food.name), dim: selectedFoods.length > 0 && !selectedFoods.includes(food.name) }">
+              <input type="checkbox" :value="food.name" v-model="selectedFoods" :id="'food-' + food.id"
+                class="selection-checkbox" />
               <div v-if="food.image" class="selection-image">
                 <img :src="resolveFoodImage(food.image)" :alt="food.name" />
               </div>
@@ -227,32 +302,42 @@ class="selection-card" :class="{ selected: selectedFoods.includes(food.name), di
             </label>
           </div>
           <p class="warning-note" v-if="selectedFoods.length > mainDishLimit">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum {{ mainDishLimit }} main dishes allowed. Please deselect {{ selectedFoods.length - mainDishLimit }} item(s).
+            Maximum {{ mainDishLimit }} main dishes allowed. Please deselect {{ selectedFoods.length - mainDishLimit }}
+            item(s).
           </p>
         </div>
 
         <!-- Side Dish Selection -->
         <div class="form-section" v-if="availableSides.length > 0">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+              </svg></div>
             <div>
               <h3>Side Dish Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedSides.length === sideDishLimit, 'selecting': selectedSides.length > 0 && selectedSides.length < sideDishLimit}">
-                  <span v-if="selectedSides.length === 0">[ 0 / {{ sideDishLimit }} ] Choose Side Dishes</span>
-                  <span v-else-if="selectedSides.length < sideDishLimit">[ {{ selectedSides.length }} / {{ sideDishLimit }} ] Selecting...</span>
-                  <span v-else>[ {{ sideDishLimit }} / {{ sideDishLimit }} ] Completed ✓</span>
-                </div>
+              <div class="progress-badge"
+                :class="{ 'completed': selectedSides.length === sideDishLimit, 'selecting': selectedSides.length > 0 && selectedSides.length < sideDishLimit }">
+                <span v-if="selectedSides.length === 0">[ 0 / {{ sideDishLimit }} ] Choose Side Dishes</span>
+                <span v-else-if="selectedSides.length < sideDishLimit">[ {{ selectedSides.length }} / {{ sideDishLimit
+                }} ]
+                  Selecting...</span>
+                <span v-else>[ {{ sideDishLimit }} / {{ sideDishLimit }} ] Completed ✓</span>
+              </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="side in availableSides" :key="side.id || side._id"
-class="selection-card" :class="{ selected: selectedSides.includes(side.name), disabled: selectedSides.length >= sideDishLimit && !selectedSides.includes(side.name), dim: selectedSides.length > 0 && !selectedSides.includes(side.name) }">
-              <input type="checkbox" :value="side.name" v-model="selectedSides" :id="'side-' + (side.id || side._id)" class="selection-checkbox" />
+            <label v-for="side in availableSides" :key="side.id || side._id" class="selection-card"
+              :class="{ selected: selectedSides.includes(side.name), disabled: selectedSides.length >= sideDishLimit && !selectedSides.includes(side.name), dim: selectedSides.length > 0 && !selectedSides.includes(side.name) }">
+              <input type="checkbox" :value="side.name" v-model="selectedSides" :id="'side-' + (side.id || side._id)"
+                class="selection-checkbox" />
               <div v-if="side.image" class="selection-image">
                 <img :src="resolveFoodImage(side.image)" :alt="side.name" />
               </div>
@@ -263,31 +348,45 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             </label>
           </div>
           <p class="warning-note" v-if="selectedSides.length > sideDishLimit">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum {{ sideDishLimit }} side dishes allowed. Please deselect {{ selectedSides.length - sideDishLimit }} item(s).
+            Maximum {{ sideDishLimit }} side dishes allowed. Please deselect {{ selectedSides.length - sideDishLimit }}
+            item(s).
           </p>
         </div>
 
         <!-- Beverage Selection -->
         <div class="form-section" v-if="availableDrinks.length > 0">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                <line x1="6" y1="1" x2="6" y2="4" />
+                <line x1="10" y1="1" x2="10" y2="4" />
+                <line x1="14" y1="1" x2="14" y2="4" />
+              </svg></div>
             <div>
               <h3>Beverage Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedDrinks.length === beverageLimit, 'selecting': selectedDrinks.length > 0 && selectedDrinks.length < beverageLimit}">
-                  <span v-if="selectedDrinks.length === 0">[ 0 / {{ beverageLimit }} ] Choose Beverages</span>
-                  <span v-else-if="selectedDrinks.length < beverageLimit">[ {{ selectedDrinks.length }} / {{ beverageLimit }} ] Selecting...</span>
-                  <span v-else>[ {{ beverageLimit }} / {{ beverageLimit }} ] Completed ✓</span>
-                </div>
+              <div class="progress-badge"
+                :class="{ 'completed': selectedDrinks.length === beverageLimit, 'selecting': selectedDrinks.length > 0 && selectedDrinks.length < beverageLimit }">
+                <span v-if="selectedDrinks.length === 0">[ 0 / {{ beverageLimit }} ] Choose Beverages</span>
+                <span v-else-if="selectedDrinks.length < beverageLimit">[ {{ selectedDrinks.length }} / {{ beverageLimit
+                }} ]
+                  Selecting...</span>
+                <span v-else>[ {{ beverageLimit }} / {{ beverageLimit }} ] Completed ✓</span>
+              </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="drink in availableDrinks" :key="drink.id || drink._id" class="selection-card" :class="{ selected: selectedDrinks.includes(drink.name), disabled: selectedDrinks.length >= beverageLimit && !selectedDrinks.includes(drink.name), dim: selectedDrinks.length > 0 && !selectedDrinks.includes(drink.name) }">
-              <input type="checkbox" :value="drink.name" v-model="selectedDrinks" :id="'drink-' + (drink.id || drink._id)" class="selection-checkbox" />
+            <label v-for="drink in availableDrinks" :key="drink.id || drink._id" class="selection-card"
+              :class="{ selected: selectedDrinks.includes(drink.name), disabled: selectedDrinks.length >= beverageLimit && !selectedDrinks.includes(drink.name), dim: selectedDrinks.length > 0 && !selectedDrinks.includes(drink.name) }">
+              <input type="checkbox" :value="drink.name" v-model="selectedDrinks"
+                :id="'drink-' + (drink.id || drink._id)" class="selection-checkbox" />
               <div v-if="drink.image" class="selection-image">
                 <img :src="resolveFoodImage(drink.image)" :alt="drink.name" />
               </div>
@@ -298,31 +397,46 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             </label>
           </div>
           <p class="warning-note" v-if="selectedDrinks.length > beverageLimit">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum {{ beverageLimit }} beverages allowed. Please deselect {{ selectedDrinks.length - beverageLimit }} item(s).
+            Maximum {{ beverageLimit }} beverages allowed. Please deselect {{ selectedDrinks.length - beverageLimit }}
+            item(s).
           </p>
         </div>
 
         <!-- Dessert Selection -->
         <div class="form-section" v-if="availableDesserts.length > 0">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v2"/><path d="M12 8v2"/><path d="M17 8v2"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+                <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+                <path d="M2 21h20" />
+                <path d="M7 8v2" />
+                <path d="M12 8v2" />
+                <path d="M17 8v2" />
+              </svg></div>
             <div>
               <h3>Dessert Selection</h3>
-              <div class="progress-badge" :class="{'completed': selectedDesserts.length === dessertLimit, 'selecting': selectedDesserts.length > 0 && selectedDesserts.length < dessertLimit}">
-                  <span v-if="selectedDesserts.length === 0">[ 0 / {{ dessertLimit }} ] Choose Desserts</span>
-                  <span v-else-if="selectedDesserts.length < dessertLimit">[ {{ selectedDesserts.length }} / {{ dessertLimit }} ] Selecting...</span>
-                  <span v-else>[ {{ dessertLimit }} / {{ dessertLimit }} ] Completed ✓</span>
-                </div>
+              <div class="progress-badge"
+                :class="{ 'completed': selectedDesserts.length === dessertLimit, 'selecting': selectedDesserts.length > 0 && selectedDesserts.length < dessertLimit }">
+                <span v-if="selectedDesserts.length === 0">[ 0 / {{ dessertLimit }} ] Choose Desserts</span>
+                <span v-else-if="selectedDesserts.length < dessertLimit">[ {{ selectedDesserts.length }} / {{
+                  dessertLimit }}
+                  ] Selecting...</span>
+                <span v-else>[ {{ dessertLimit }} / {{ dessertLimit }} ] Completed ✓</span>
+              </div>
             </div>
           </div>
           <div class="selection-grid">
-            <label v-for="dessert in availableDesserts" :key="dessert.id || dessert._id" class="selection-card" :class="{ selected: selectedDesserts.includes(dessert.name), disabled: selectedDesserts.length >= dessertLimit && !selectedDesserts.includes(dessert.name), dim: selectedDesserts.length > 0 && !selectedDesserts.includes(dessert.name) }">
-              <input type="checkbox" :value="dessert.name" v-model="selectedDesserts" :id="'dessert-' + (dessert.id || dessert._id)" class="selection-checkbox" />
+            <label v-for="dessert in availableDesserts" :key="dessert.id || dessert._id" class="selection-card"
+              :class="{ selected: selectedDesserts.includes(dessert.name), disabled: selectedDesserts.length >= dessertLimit && !selectedDesserts.includes(dessert.name), dim: selectedDesserts.length > 0 && !selectedDesserts.includes(dessert.name) }">
+              <input type="checkbox" :value="dessert.name" v-model="selectedDesserts"
+                :id="'dessert-' + (dessert.id || dessert._id)" class="selection-checkbox" />
               <div v-if="dessert.image" class="selection-image">
                 <img :src="resolveFoodImage(dessert.image)" :alt="dessert.name" />
               </div>
@@ -333,19 +447,25 @@ class="selection-card" :class="{ selected: selectedSides.includes(side.name), di
             </label>
           </div>
           <p class="warning-note" v-if="selectedDesserts.length > dessertLimit">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Maximum {{ dessertLimit }} desserts allowed. Please deselect {{ selectedDesserts.length - dessertLimit }} item(s).
+            Maximum {{ dessertLimit }} desserts allowed. Please deselect {{ selectedDesserts.length - dessertLimit }}
+            item(s).
           </p>
         </div>
 
         <!-- Add-on / Remark -->
         <div class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg></div>
             <div>
               <h3>Additional Notes / Remarks</h3>
               <p class="section-subtitle">Add any special notes or requests (optional)</p>
@@ -360,31 +480,44 @@ Examples:
 • Any other notes" class="remark-textarea"></textarea>
         </div>
 
-                  <!-- Modern Info Card -->
-          <div class="modern-info-card">
-            <div class="info-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            </div>
-            <div class="info-content">
-              <strong>Quotation Required</strong>
-              <p>All bookings now require quotation approval. Submit your request and wait for provider confirmation.</p>
-            </div>
+        <!-- Modern Info Card -->
+        <div class="modern-info-card">
+          <div class="info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg>
+          </div>
+          <div class="info-content">
+            <strong>Quotation Required</strong>
+            <p>All bookings now require quotation approval. Submit your request and wait for provider confirmation.</p>
+          </div>
+        </div>
+
+        <!-- Bottom Floating Action Bar -->
+        <div class="floating-action-bar">
+          <div class="fab-price-section">
+            <span class="fab-label">Total Estimate</span>
+            <strong class="fab-amount">RM {{ totalWithWaiter.toFixed(2) }} <span class="fab-pax-count">for {{
+              numberOfPax }}
+                guests</span></strong>
           </div>
 
-          <!-- Bottom Floating Action Bar -->
-          <div class="floating-action-bar">
-            <div class="fab-price-section">
-              <span class="fab-label">Total Estimate</span>
-              <strong class="fab-amount">RM {{ totalWithWaiter.toFixed(2) }} <span class="fab-pax-count">for {{ numberOfPax }} guests</span></strong>
-            </div>
-            
-            <div class="fab-actions">
-              <button type="button" @click="requestQuotation" class="fab-btn primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                <span>Request Quote</span>
-              </button>
-            </div>
+          <div class="fab-actions">
+            <button type="button" @click="requestQuotation" class="fab-btn primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              <span>Request Quote</span>
+            </button>
           </div>
+        </div>
       </div>
     </div>
   </div>
@@ -422,9 +555,9 @@ export default {
     packages() {
       const menuStore = useMenuStore()
       let packages = menuStore.allPackages
-      
 
-      
+
+
       // Filter by providerId from route parameter
       if (this.selectedProviderId) {
         packages = packages.filter(pkg => {
@@ -432,8 +565,8 @@ export default {
           return match
         })
       }
-      
-      
+
+
       // Sort packages alphabetically by name
       return [...packages].sort((a, b) => a.name.localeCompare(b.name))
     },
@@ -444,12 +577,12 @@ export default {
     availableRice() {
       const menuStore = useMenuStore()
       const allRice = menuStore.availableFoods.filter(f => f.category === 'rice')
-      
 
-      
+
+
       // If a package is selected, filter by packageIds
       if (this.selectedPackage && this.selectedPackage._id) {
-        const filtered = allRice.filter(rice => 
+        const filtered = allRice.filter(rice =>
           rice.packageIds && rice.packageIds.includes(this.selectedPackage._id)
         )
         return filtered
@@ -459,12 +592,12 @@ export default {
     availableMainDishes() {
       const menuStore = useMenuStore()
       const allMainDishes = menuStore.availableFoods.filter(f => f.category === 'main')
-      
 
-      
+
+
       // If a package is selected, filter by packageIds
       if (this.selectedPackage && this.selectedPackage._id) {
-        const filtered = allMainDishes.filter(dish => 
+        const filtered = allMainDishes.filter(dish =>
           dish.packageIds && dish.packageIds.includes(this.selectedPackage._id)
         )
         return filtered
@@ -474,9 +607,9 @@ export default {
     availableSides() {
       const menuStore = useMenuStore()
       const allSides = menuStore.availableFoods.filter(f => f.category === 'side')
-      
+
       if (this.selectedPackage && this.selectedPackage._id) {
-        return allSides.filter(side => 
+        return allSides.filter(side =>
           side.packageIds && side.packageIds.includes(this.selectedPackage._id)
         )
       }
@@ -485,9 +618,9 @@ export default {
     availableDrinks() {
       const menuStore = useMenuStore()
       const allDrinks = menuStore.availableFoods.filter(f => f.category === 'drink')
-      
+
       if (this.selectedPackage && this.selectedPackage._id) {
-        return allDrinks.filter(drink => 
+        return allDrinks.filter(drink =>
           drink.packageIds && drink.packageIds.includes(this.selectedPackage._id)
         )
       }
@@ -496,9 +629,9 @@ export default {
     availableDesserts() {
       const menuStore = useMenuStore()
       const allDesserts = menuStore.availableFoods.filter(f => f.category === 'dessert')
-      
+
       if (this.selectedPackage && this.selectedPackage._id) {
-        return allDesserts.filter(dessert => 
+        return allDesserts.filter(dessert =>
           dessert.packageIds && dessert.packageIds.includes(this.selectedPackage._id)
         )
       }
@@ -526,6 +659,9 @@ export default {
       const hasDiscountedPrice = Number.isFinite(Number(this.selectedPackage.discountedPrice))
       return !!this.selectedPackage.discountEnabled && hasThreshold && hasDiscountedPrice
     },
+    isSelectedLumpSum() {
+      return this.isLumpSumPackage(this.selectedPackage)
+    },
     isDiscountApplied() {
       if (!this.selectedPackage || !this.hasPackageDiscount) return false
       return Number(this.numberOfPax) >= Number(this.selectedPackage.discountMinPax)
@@ -537,8 +673,37 @@ export default {
       }
       return Number(this.selectedPackage.price) || 0
     },
+    activePriceTotal() {
+      if (!this.selectedPackage) return 0;
+
+      // 1. Get the base values from your database/API
+      const basePrice = Number(this.selectedPackage.price) || 0;
+
+      // Use minPax as the base threshold (e.g., 1000)
+      const basePaxLimit = Number(this.selectedPackage.minPax || 1);
+      const currentPaxInput = Number(this.numberOfPax);
+
+      // 2. Flexible Logic for Lump Sum Packages
+      if (this.isSelectedLumpSum) {
+        if (currentPaxInput <= basePaxLimit) {
+          // If guests are within the limit, return only the base price (RM 13,888)
+          return basePrice;
+        } else {
+          // If guests exceed limit, calculate: Base + (Extra Guests * Extra Rate)
+          // Example: 13,888 + (1 * 12)
+          const extraGuests = currentPaxInput - basePaxLimit;
+          const extraRatePerGuest = Number(this.selectedPackage.discountedPrice) || 0;
+
+          return basePrice + (extraGuests * extraRatePerGuest);
+        }
+      }
+
+      // 3. Keep standard calculation for normal "Per Pax" packages
+      return this.activePricePerPax * this.numberOfPax;
+
+    },
     packageSubtotal() {
-      return this.selectedPackage ? this.activePricePerPax * this.numberOfPax : 0
+      return this.selectedPackage ? this.activePriceTotal : 0
     },
     waiterAddonTotal() {
       if (!this.selectedPackage || !this.selectedPackage.waitersAvailable || !this.wantsWaiters) {
@@ -559,6 +724,19 @@ export default {
     }
   },
   methods: {
+    isLumpSumPackage(pkg) {
+      if (!pkg) return false
+      if (pkg.isLumpSumPackage === true || String(pkg.isLumpSumPackage).toLowerCase() === 'true') return true
+      const packageName = String(pkg.name || '').toLowerCase()
+      const packageDescription = String(pkg.description || '').toLowerCase()
+      return packageName.includes('lump sum')
+        || packageName.includes('lumsum')
+        || packageDescription.includes('lump sum')
+        || packageDescription.includes('lumsum')
+        || packageDescription.includes('fixed total price')
+        || packageName.includes('premium')
+        || packageDescription.includes('one-set special package')
+    },
     resolvePackageImage(imagePath) {
       return this.resolveFoodImage(imagePath)
     },
@@ -579,14 +757,18 @@ export default {
       this.notification.message = message
       this.notification.type = type
       this.notification.show = true
-      
+
       setTimeout(() => {
         this.notification.show = false
       }, 3000)
     },
-    
+
     selectPackage(pkg) {
       this.selectedPackage = pkg
+
+      // Set the default pax to the package's minPax (fallback to 1 if not set)
+      this.numberOfPax = Number(pkg.minPax) || 1
+
       this.selectedRice = []
       this.selectedFoods = []
       this.selectedSides = []
@@ -595,7 +777,7 @@ export default {
       this.wantsWaiters = false
       this.wantsVenue = false
       this.remark = ""
-      
+
       // Fetch foods for this specific provider
       const menuStore = useMenuStore()
       if (pkg.providerId) {
@@ -603,7 +785,7 @@ export default {
         const providerId = pkg.providerId._id || pkg.providerId
         menuStore.fetchFoods(providerId)
       }
-      
+
       // Auto scroll to order form
       this.$nextTick(() => {
         const orderForm = document.querySelector('.order-form')
@@ -648,16 +830,23 @@ export default {
           `Venue: ${this.wantsVenue ? `Yes (RM ${this.venueAddonTotal.toFixed(2)})` : 'No'}`
         )
       }
-      
+
       const standardPerPax = Number(this.selectedPackage.price) || 0
-      const appliedPerPax = this.activePricePerPax
-      const standardPrice = appliedPerPax * this.numberOfPax
+      const isLumpSum = this.isLumpSumPackage(this.selectedPackage)
+      const appliedPrice = this.isDiscountApplied
+        ? (Number(this.selectedPackage.discountedPrice) || standardPerPax)
+        : standardPerPax
+      const standardPrice = isLumpSum ? appliedPrice : appliedPrice * this.numberOfPax
       const discountDetails = this.hasPackageDiscount
-        ? `
+        ? (isLumpSum
+          ? `
+Bulk Discount Config: ${Number(this.selectedPackage.discountMinPax)}+ pax at RM ${Number(this.selectedPackage.discountedPrice).toFixed(2)} total
+Applied Total Price: RM ${appliedPrice.toFixed(2)} (${this.isDiscountApplied ? 'DISCOUNT APPLIED' : 'NORMAL RATE'})`
+          : `
 Bulk Discount Config: ${Number(this.selectedPackage.discountMinPax)}+ pax at RM ${Number(this.selectedPackage.discountedPrice).toFixed(2)}/pax
-Applied Price Per Pax: RM ${appliedPerPax.toFixed(2)} (${this.isDiscountApplied ? 'DISCOUNT APPLIED' : 'NORMAL RATE'})`
+Applied Price Per Pax: RM ${appliedPrice.toFixed(2)} (${this.isDiscountApplied ? 'DISCOUNT APPLIED' : 'NORMAL RATE'})`)
         : ''
-      
+
       // Prepare quotation request with clear context
       const quotationData = {
         providerId: this.selectedPackage.providerId?._id || this.selectedPackage.providerId,
@@ -673,7 +862,7 @@ Applied Price Per Pax: RM ${appliedPerPax.toFixed(2)} (${this.isDiscountApplied 
         additionalRequests: `━━━━ QUOTATION REQUEST ━━━━
 
 BASED ON PACKAGE: ${this.selectedPackage.name}
-Standard Price: RM ${standardPerPax.toFixed(2)}/pax × ${this.numberOfPax} guests = RM ${standardPrice.toFixed(2)}${discountDetails}
+Standard Price: RM ${standardPerPax.toFixed(2)}${isLumpSum ? '' : `/pax × ${this.numberOfPax} guests`} = RM ${standardPrice.toFixed(2)}${discountDetails}
 
 SELECTED ITEMS:
 ${itemsSummary.join('\n')}
@@ -692,12 +881,12 @@ Note: Customer is requesting a custom quotation. Please review their requirement
       try {
         const quotationsStore = useQuotationsStore()
         await quotationsStore.submitQuotation(quotationData)
-        
+
         this.showNotification("✓ Quotation request submitted successfully! The provider will review your request and send you a custom quote within 1-2 business days.", "success")
-        
+
         // Reset form
         this.selectedPackage = null
-        this.numberOfPax = 50
+        this.numberOfPax = 1
         this.selectedRice = []
         this.selectedFoods = []
         this.selectedSides = []
@@ -706,12 +895,12 @@ Note: Customer is requesting a custom quotation. Please review their requirement
         this.wantsWaiters = false
         this.wantsVenue = false
         this.remark = ""
-        
+
         // Navigate to quotations page after 2 seconds
         setTimeout(() => {
           this.$router.push('/quotations')
         }, 2000)
-        
+
       } catch (error) {
         console.error('Error submitting quotation:', error)
         const errorMsg = error.response?.data?.message || error.message || 'Failed to submit quotation. Please try again.'
@@ -723,7 +912,7 @@ Note: Customer is requesting a custom quotation. Please review their requirement
     '$route.query.providerId'(newProviderId) {
       this.selectedProviderId = newProviderId || null
 
-      
+
       // Refetch fresh data when provider changes
       const menuStore = useMenuStore()
       if (this.selectedProviderId) {
@@ -733,18 +922,18 @@ Note: Customer is requesting a custom quotation. Please review their requirement
         menuStore.fetchPackages()
         menuStore.fetchFoods()
       }
-      
+
       // Reset selection
       this.selectedPackage = null
     }
   },
   mounted() {
     const menuStore = useMenuStore()
-    
+
     // Get providerId from query parameter
     this.selectedProviderId = this.$route.query.providerId || null
 
-    
+
     // Fetch fresh data from backend (not from cache)
     if (this.selectedProviderId) {
       menuStore.fetchPackages(this.selectedProviderId)
@@ -827,7 +1016,7 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 20%),
     radial-gradient(circle at 90% 80%, rgba(15, 23, 42, 0.1) 0%, transparent 20%);
   z-index: 1;
@@ -847,7 +1036,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   background: linear-gradient(to right, #ffffff, #94a3b8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: white; /* Fallback */
+  color: white;
+  /* Fallback */
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
@@ -892,7 +1082,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid #0f172a; /* Cyan border for all cards as per design */
+  border: 2px solid #0f172a;
+  /* Cyan border for all cards as per design */
   display: flex;
   flex-direction: column;
   position: relative;
@@ -911,7 +1102,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
 
 .card-banner {
   height: 140px;
-  background: #e2e8f0; /* Solid light gray background */
+  background: #e2e8f0;
+  /* Solid light gray background */
   position: relative;
 }
 
@@ -945,7 +1137,21 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.lumpsum-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
 .card-content {
@@ -1005,7 +1211,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
 }
 
 .package-meta svg {
-  color: #94a3b8; /* Lighter gray for icon */
+  color: #94a3b8;
+  /* Lighter gray for icon */
 }
 
 /* Button style matching "SELECTED" block in design */
@@ -1025,7 +1232,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
 }
 
 .package-card:hover .select-btn-placeholder {
-  background: #1e293b; /* Darker cyan on hover */
+  background: #1e293b;
+  /* Darker cyan on hover */
 }
 
 /* Order Form Styles */
@@ -1059,8 +1267,10 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Slight shadow */
-  color: #0f172a; /* Icon Color */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  /* Slight shadow */
+  color: #0f172a;
+  /* Icon Color */
 }
 
 .banner-info h4 {
@@ -1169,13 +1379,15 @@ Note: Customer is requesting a custom quotation. Please review their requirement
 .section-icon {
   width: 48px;
   height: 48px;
-  background: #f1f5f9; /* Cyan Tint */
+  background: #f1f5f9;
+  /* Cyan Tint */
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  color: #0f172a; /* Cyan Color */
+  color: #0f172a;
+  /* Cyan Color */
 }
 
 .section-header h3 {
@@ -1258,7 +1470,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   padding: 16px;
   background: #f8fafc;
   border-radius: 12px;
-  border: 1px dashed #cbd5e1; /* Dashed border for subtotal */
+  border: 1px dashed #cbd5e1;
+  /* Dashed border for subtotal */
 }
 
 .subtotal-card span {
@@ -1278,7 +1491,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
 /* Selection Grids */
 .selection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Slightly larger cards */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* Slightly larger cards */
   gap: 16px;
 }
 
@@ -1299,8 +1513,10 @@ Note: Customer is requesting a custom quotation. Please review their requirement
 }
 
 .selection-card.selected {
-  border-color: #0f172a; /* Matching Cyan */
-  background: #f1f5f9; /* Light Cyan Tint */
+  border-color: #0f172a;
+  /* Matching Cyan */
+  background: #f1f5f9;
+  /* Light Cyan Tint */
   box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.2);
 }
 
@@ -1447,7 +1663,8 @@ Note: Customer is requesting a custom quotation. Please review their requirement
   gap: 16px;
 }
 
-.submit-btn, .quotation-btn {
+.submit-btn,
+.quotation-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -1492,422 +1709,444 @@ Note: Customer is requesting a custom quotation. Please review their requirement
     max-width: calc(100% - 70px);
     padding: 20px;
   }
-  
+
   .hero-section {
     padding: 40px 20px;
   }
-  
+
   .hero-content h1 {
     font-size: 28px;
   }
 }
 
 
-  .pax-quick-select {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .pax-pill {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid #cbd5e1;
-    background: white;
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .pax-pill:hover {
-    border-color: #0f172a;
-    color: #0f172a;
-  }
-  .pax-pill.active {
-    background: #0f172a;
-    color: white;
-    border-color: #0f172a;
-  }
-  
-  .progress-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: #f1f5f9;
-    color: #64748b;
-    margin-top: 8px;
-    transition: all 0.3s ease;
-  }
-  .progress-badge.selecting {
-    background: #e0f2fe;
-    color: #0369a1;
-  }
-  .progress-badge.completed {
-    background: #dcfce7;
-    color: #15803d;
-  }
+.pax-quick-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
 
-  .selection-card.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-  .selection-card.dim {
-    opacity: 0.7;
-  }
-  .selection-card.dim:hover {
-    opacity: 1;
-  }
+.pax-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
 
-  .pax-quick-select {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .pax-pill {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid #cbd5e1;
-    background: white;
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .pax-pill:hover {
-    border-color: #0f172a;
-    color: #0f172a;
-  }
-  .pax-pill.active {
-    background: #0f172a;
-    color: white;
-    border-color: #0f172a;
-  }
-  
-  .progress-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: #f1f5f9;
-    color: #64748b;
-    margin-top: 8px;
-    transition: all 0.3s ease;
-  }
-  .progress-badge.selecting {
-    background: #e0f2fe;
-    color: #0369a1;
-  }
-  .progress-badge.completed {
-    background: #dcfce7;
-    color: #15803d;
-  }
+.pax-pill:hover {
+  border-color: #0f172a;
+  color: #0f172a;
+}
 
-  .selection-card.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-  .selection-card.dim {
-    opacity: 0.7;
-  }
-  .selection-card.dim:hover {
-    opacity: 1;
-  }
+.pax-pill.active {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
 
-  /* --- NEW UI COMPONENT STYLES --- */
-  /* Modern Info Card */
-  .modern-info-card {
-    background: #f8fafc;
-    border-left: 4px solid #0ea5e9;
-    border-radius: 8px;
-    padding: 16px 20px;
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    align-items: flex-start;
-  }
-  
-  .modern-info-card .info-icon {
-    color: #0ea5e9;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
+.progress-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  margin-top: 8px;
+  transition: all 0.3s ease;
+}
 
-  .modern-info-card .info-content strong {
-    display: block;
-    color: #0f172a;
-    font-size: 0.95rem;
-    margin-bottom: 6px;
-  }
+.progress-badge.selecting {
+  background: #e0f2fe;
+  color: #0369a1;
+}
 
-  .modern-info-card .info-content p {
-    color: #475569;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    margin: 0;
-  }
+.progress-badge.completed {
+  background: #dcfce7;
+  color: #15803d;
+}
 
-  /* Floating Action Bar */
-  .order-form {
-    padding-bottom: 100px; /* Add padding so FAB doesn't cover content */
-  }
+.selection-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
+.selection-card.dim {
+  opacity: 0.7;
+}
+
+.selection-card.dim:hover {
+  opacity: 1;
+}
+
+.pax-quick-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pax-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pax-pill:hover {
+  border-color: #0f172a;
+  color: #0f172a;
+}
+
+.pax-pill.active {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+.progress-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  margin-top: 8px;
+  transition: all 0.3s ease;
+}
+
+.progress-badge.selecting {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.progress-badge.completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.selection-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.selection-card.dim {
+  opacity: 0.7;
+}
+
+.selection-card.dim:hover {
+  opacity: 1;
+}
+
+/* --- NEW UI COMPONENT STYLES --- */
+/* Modern Info Card */
+.modern-info-card {
+  background: #f8fafc;
+  border-left: 4px solid #0ea5e9;
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.modern-info-card .info-icon {
+  color: #0ea5e9;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.modern-info-card .info-content strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.modern-info-card .info-content p {
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Floating Action Bar */
+.order-form {
+  padding-bottom: 100px;
+  /* Add padding so FAB doesn't cover content */
+}
+
+.floating-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #e2e8f0;
+  padding: 16px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+}
+
+.fab-price-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.fab-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.fab-amount {
+  font-size: 1.5rem;
+  color: #0f172a;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+  font-weight: 700;
+}
+
+.fab-pax-count {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.fab-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.fab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fab-btn.outline {
+  background: transparent;
+  border: 2px solid #e2e8f0;
+  color: #475569;
+}
+
+.fab-btn.outline:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.fab-btn.primary {
+  background: #0f172a;
+  border: 2px solid #0f172a;
+  color: white;
+}
+
+.fab-btn.primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+@media (max-width: 768px) {
   .floating-action-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid #e2e8f0;
-    padding: 16px 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
-    z-index: 1000;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
   }
 
   .fab-price-section {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .fab-label {
-    font-size: 0.8rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-  }
-
-  .fab-amount {
-    font-size: 1.5rem;
-    color: #0f172a;
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-top: 2px;
-    font-weight: 700;
-  }
-
-  .fab-pax-count {
-    font-size: 0.9rem;
-    color: #64748b;
-    font-weight: 500;
+    align-items: center;
+    width: 100%;
   }
 
   .fab-actions {
-    display: flex;
-    gap: 12px;
+    width: 100%;
+    flex-direction: column;
   }
 
   .fab-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    width: 100%;
+    justify-content: center;
   }
+}
 
-  .fab-btn.outline {
-    background: transparent;
-    border: 2px solid #e2e8f0;
-    color: #475569;
-  }
+/* --- NEW UI COMPONENT STYLES --- */
+/* Modern Info Card */
+.modern-info-card {
+  background: #f8fafc;
+  border-left: 4px solid #0ea5e9;
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
 
-  .fab-btn.outline:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-    color: #0f172a;
-  }
+.modern-info-card .info-icon {
+  color: #0ea5e9;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 
-  .fab-btn.primary {
-    background: #0f172a;
-    border: 2px solid #0f172a;
-    color: white;
-  }
+.modern-info-card .info-content strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
 
-  .fab-btn.primary:hover {
-    background: #1e293b;
-    border-color: #1e293b;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-  }
+.modern-info-card .info-content p {
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
 
-  @media (max-width: 768px) {
-    .floating-action-bar {
-      flex-direction: column;
-      gap: 16px;
-      padding: 16px;
-    }
-    .fab-price-section {
-      align-items: center;
-      width: 100%;
-    }
-    .fab-actions {
-      width: 100%;
-      flex-direction: column;
-    }
-    .fab-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
+/* Floating Action Bar */
+.order-form {
+  padding-bottom: 100px;
+  /* Add padding so FAB doesn't cover content */
+}
 
-  /* --- NEW UI COMPONENT STYLES --- */
-  /* Modern Info Card */
-  .modern-info-card {
-    background: #f8fafc;
-    border-left: 4px solid #0ea5e9;
-    border-radius: 8px;
-    padding: 16px 20px;
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    align-items: flex-start;
-  }
-  
-  .modern-info-card .info-icon {
-    color: #0ea5e9;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
+.floating-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #e2e8f0;
+  padding: 16px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+}
 
-  .modern-info-card .info-content strong {
-    display: block;
-    color: #0f172a;
-    font-size: 0.95rem;
-    margin-bottom: 6px;
-  }
+.fab-price-section {
+  display: flex;
+  flex-direction: column;
+}
 
-  .modern-info-card .info-content p {
-    color: #475569;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    margin: 0;
-  }
+.fab-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
 
-  /* Floating Action Bar */
-  .order-form {
-    padding-bottom: 100px; /* Add padding so FAB doesn't cover content */
-  }
+.fab-amount {
+  font-size: 1.5rem;
+  color: #0f172a;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+  font-weight: 700;
+}
 
+.fab-pax-count {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.fab-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.fab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fab-btn.outline {
+  background: transparent;
+  border: 2px solid #e2e8f0;
+  color: #475569;
+}
+
+.fab-btn.outline:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.fab-btn.primary {
+  background: #0f172a;
+  border: 2px solid #0f172a;
+  color: white;
+}
+
+.fab-btn.primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+@media (max-width: 768px) {
   .floating-action-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid #e2e8f0;
-    padding: 16px 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
-    z-index: 1000;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
   }
 
   .fab-price-section {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .fab-label {
-    font-size: 0.8rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-  }
-
-  .fab-amount {
-    font-size: 1.5rem;
-    color: #0f172a;
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-top: 2px;
-    font-weight: 700;
-  }
-
-  .fab-pax-count {
-    font-size: 0.9rem;
-    color: #64748b;
-    font-weight: 500;
+    align-items: center;
+    width: 100%;
   }
 
   .fab-actions {
-    display: flex;
-    gap: 12px;
+    width: 100%;
+    flex-direction: column;
   }
 
   .fab-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    width: 100%;
+    justify-content: center;
   }
-
-  .fab-btn.outline {
-    background: transparent;
-    border: 2px solid #e2e8f0;
-    color: #475569;
-  }
-
-  .fab-btn.outline:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-    color: #0f172a;
-  }
-
-  .fab-btn.primary {
-    background: #0f172a;
-    border: 2px solid #0f172a;
-    color: white;
-  }
-
-  .fab-btn.primary:hover {
-    background: #1e293b;
-    border-color: #1e293b;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-  }
-
-  @media (max-width: 768px) {
-    .floating-action-bar {
-      flex-direction: column;
-      gap: 16px;
-      padding: 16px;
-    }
-    .fab-price-section {
-      align-items: center;
-      width: 100%;
-    }
-    .fab-actions {
-      width: 100%;
-      flex-direction: column;
-    }
-    .fab-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
+}
 </style>

@@ -51,7 +51,7 @@ const quotationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'reviewed', 'quoted', 'accepted', 'rejected'],
+    enum: ['pending', 'reviewed', 'quoted', 'quotedEdited', 'accepted', 'rejected'],
     default: 'pending'
   },
   quotedAmount: {

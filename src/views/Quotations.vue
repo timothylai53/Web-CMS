@@ -1,7 +1,7 @@
 <template>
   <div class="quotations-page">
     <Navbar />
-    
+
     <div class="quotations-container">
       <!-- Modern Hero Section -->
       <div class="hero-section">
@@ -37,7 +37,8 @@
         <!-- Empty State -->
         <div v-if="filteredQuotations.length === 0" class="empty-state">
           <div class="empty-icon-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -54,17 +55,23 @@
         <div v-else class="quotations-grid">
           <div v-for="quotation in filteredQuotations" :key="quotation._id" class="quotation-card">
             <div class="card-status-bar" :class="quotation.status"></div>
-            
+
             <div class="card-header">
               <div class="header-top">
                 <span class="id-badge">#{{ quotation.quotationId || 'PROCESSING' }}</span>
                 <span class="status-badge" :class="quotation.status">
-                  {{ quotation.status === 'quoted' ? 'QUOTE RECEIVED' : quotation.status.toUpperCase() }}
+                  {{ getStatusDisplayText(quotation.status) }}
                 </span>
               </div>
               <h3 class="event-title">{{ quotation.eventType || 'Catering Event' }}</h3>
               <p class="event-date">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
                 {{ formatDate(quotation.eventDate) }}
               </p>
             </div>
@@ -90,7 +97,7 @@
               </div>
 
               <!-- Admin Response Preview -->
-              <div v-if="quotation.status === 'quoted' || quotation.status === 'accepted'" class="quote-preview">
+              <div v-if="isQuotedLikeStatus(quotation.status) || quotation.status === 'accepted'" class="quote-preview">
                 <div class="quote-amount">
                   <span class="label">Quoted Price</span>
                   <span class="amount">RM {{ quotation.quotedAmount?.toFixed(2) || '0.00' }}</span>
@@ -103,17 +110,14 @@
                 <button class="btn-details" @click="openDetailsModal(quotation)">
                   View Details
                 </button>
-                <button
-                  v-if="quotation.status === 'quoted' && quotation.quotationPdfUrl"
-                  class="btn-view-pdf"
-                  @click.stop="downloadQuotationPdf(quotation)"
-                >
+                <button v-if="isQuotedLikeStatus(quotation.status) && quotation.quotationPdfUrl" class="btn-view-pdf"
+                  @click.stop="downloadQuotationPdf(quotation)">
                   View PDF
                 </button>
               </div>
-              
-              <div v-if="quotation.status === 'quoted'" class="action-actions-sm">
-                 <button @click.stop="acceptQuotation(quotation)" class="btn-xs-accept">Accept</button>
+
+              <div v-if="isQuotedLikeStatus(quotation.status)" class="action-actions-sm">
+                <button @click.stop="acceptQuotation(quotation)" class="btn-xs-accept">Accept</button>
               </div>
             </div>
 
@@ -137,10 +141,10 @@
             <div class="section-title">
               <span class="section-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/>
-                  <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/>
-                  <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" />
+                  <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" />
+                  <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2" />
                 </svg>
               </span>
               Event Details
@@ -148,7 +152,8 @@
             <div class="details-list">
               <div class="detail-row">
                 <span class="detail-key">Date & Time</span>
-                <span class="detail-val">{{ formatDate(selectedQuotation.eventDate) }}{{ selectedQuotation.eventTime ? `, ${selectedQuotation.eventTime}` : '' }}</span>
+                <span class="detail-val">{{ formatDate(selectedQuotation.eventDate) }}{{ selectedQuotation.eventTime ?
+                  `, ${selectedQuotation.eventTime}` : '' }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-key">Guests</span>
@@ -169,11 +174,13 @@
             <div class="section-title">
               <span class="section-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="3" width="7" height="18" rx="1" stroke="currentColor" stroke-width="2"/>
-                  <rect x="14" y="8" width="7" height="13" rx="1" stroke="currentColor" stroke-width="2"/>
-                  <line x1="6.5" y1="7" x2="6.5" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="6.5" y1="11" x2="6.5" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="6.5" y1="15" x2="6.5" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <rect x="3" y="3" width="7" height="18" rx="1" stroke="currentColor" stroke-width="2" />
+                  <rect x="14" y="8" width="7" height="13" rx="1" stroke="currentColor" stroke-width="2" />
+                  <line x1="6.5" y1="7" x2="6.5" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  <line x1="6.5" y1="11" x2="6.5" y2="11" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" />
+                  <line x1="6.5" y1="15" x2="6.5" y2="15" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" />
                 </svg>
               </span>
               Provider & Package
@@ -194,13 +201,16 @@
             </div>
           </div>
 
-          <div class="details-category" v-if="selectedQuotation.status === 'quoted' || selectedQuotation.status === 'accepted'">
+          <div class="details-category"
+            v-if="isQuotedLikeStatus(selectedQuotation.status) || selectedQuotation.status === 'accepted'">
             <div class="section-title">
               <span class="section-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-                  <path d="M12 7V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <path d="M9 9.5C9 8.67 9.9 8 11 8H13C14.1 8 15 8.67 15 9.5C15 10.33 14.1 11 13 11H11C9.9 11 9 11.67 9 12.5C9 13.33 9.9 14 11 14H13C14.1 14 15 14.67 15 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+                  <path d="M12 7V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  <path
+                    d="M9 9.5C9 8.67 9.9 8 11 8H13C14.1 8 15 8.67 15 9.5C15 10.33 14.1 11 13 11H11C9.9 11 9 11.67 9 12.5C9 13.33 9.9 14 11 14H13C14.1 14 15 14.67 15 15.5"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
               </span>
               Quotation Summary
@@ -208,7 +218,8 @@
             <div class="details-list">
               <div class="detail-row">
                 <span class="detail-key">Quoted Amount</span>
-                <span class="detail-val detail-strong">RM {{ selectedQuotation.quotedAmount?.toFixed(2) || '0.00' }}</span>
+                <span class="detail-val detail-strong">RM {{ selectedQuotation.quotedAmount?.toFixed(2) || '0.00'
+                  }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-key">Price Per Pax</span>
@@ -217,7 +228,8 @@
               <div class="detail-row" v-if="selectedQuotation.quotationPdfUrl">
                 <span class="detail-key">Quotation PDF</span>
                 <span class="detail-val">
-                  <button class="btn-download-pdf" @click="downloadQuotationPdf(selectedQuotation)">Download PDF</button>
+                  <button class="btn-download-pdf" @click="downloadQuotationPdf(selectedQuotation)">Download
+                    PDF</button>
                 </span>
               </div>
             </div>
@@ -227,11 +239,11 @@
             <div class="section-title">
               <span class="section-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 3H17L21 7V21H7V3Z" stroke="currentColor" stroke-width="2"/>
-                  <path d="M17 3V7H21" stroke="currentColor" stroke-width="2"/>
-                  <line x1="10" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2"/>
-                  <line x1="10" y1="16" x2="18" y2="16" stroke="currentColor" stroke-width="2"/>
-                  <line x1="10" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="2"/>
+                  <path d="M7 3H17L21 7V21H7V3Z" stroke="currentColor" stroke-width="2" />
+                  <path d="M17 3V7H21" stroke="currentColor" stroke-width="2" />
+                  <line x1="10" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2" />
+                  <line x1="10" y1="16" x2="18" y2="16" stroke="currentColor" stroke-width="2" />
+                  <line x1="10" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="2" />
                 </svg>
               </span>
               Requirements (Managed)
@@ -240,22 +252,21 @@
               No special requirements submitted.
             </div>
             <div v-else class="requirements-grouped">
-              <div
-                v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
-                :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}`"
-                class="req-category"
-              >
+              <div v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
+                :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}`" class="req-category">
                 <div class="req-cat-title">{{ group.name }} :</div>
                 <p v-if="isSingleLineRequirementCategory(group.name)" class="req-single-line">
                   {{ getSingleLineRequirement(group) }}
                 </p>
                 <ol v-if="shouldUseNumberedRequirements(group.name)" class="req-list numbered">
-                  <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
+                  <li v-for="(item, itemIndex) in group.items"
+                    :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
                     {{ item }}
                   </li>
                 </ol>
                 <ul v-else-if="!isSingleLineRequirementCategory(group.name)" class="req-list normal">
-                  <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
+                  <li v-for="(item, itemIndex) in group.items"
+                    :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
                     {{ item }}
                   </li>
                 </ul>
@@ -267,7 +278,9 @@
             <div class="section-title">
               <span class="section-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 11.5C21 16.19 16.97 20 12 20C10.73 20 9.52 19.75 8.43 19.29L3 21L4.81 16.04C4.29 14.7 4 13.2 4 11.5C4 6.81 8.03 3 13 3C17.97 3 21 6.81 21 11.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                  <path
+                    d="M21 11.5C21 16.19 16.97 20 12 20C10.73 20 9.52 19.75 8.43 19.29L3 21L4.81 16.04C4.29 14.7 4 13.2 4 11.5C4 6.81 8.03 3 13 3C17.97 3 21 6.81 21 11.5Z"
+                    stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
                 </svg>
               </span>
               Provider Notes
@@ -278,11 +291,12 @@
 
         <div class="details-modal-footer">
           <button @click="closeDetailsModal" class="btn-close-details">Close</button>
-          <template v-if="selectedQuotation.status === 'quoted'">
+          <template v-if="isQuotedLikeStatus(selectedQuotation.status)">
             <button @click="rejectQuotation(selectedQuotation)" class="btn-reject-full">Reject</button>
             <button @click="acceptQuotation(selectedQuotation)" class="btn-accept-full">Accept Quote & Checkout</button>
           </template>
-          <button v-if="selectedQuotation.status === 'accepted'" @click="proceedToOrder(selectedQuotation)" class="btn-proceed-full">Proceed to Checkout</button>
+          <button v-if="selectedQuotation.status === 'accepted'" @click="proceedToOrder(selectedQuotation)"
+            class="btn-proceed-full">Proceed to Checkout</button>
         </div>
       </div>
     </div>
@@ -294,7 +308,7 @@
           <h3>📝 Request Quotation</h3>
           <button @click="closeModal" class="close-btn">✕</button>
         </div>
-        
+
         <form @submit.prevent="submitQuotationRequest" class="quotation-form">
           <div class="form-row">
             <div class="form-group">
@@ -349,8 +363,8 @@
 
           <div class="form-group">
             <label>Additional Requirements</label>
-            <textarea v-model="quotationForm.additionalRequests" rows="4" 
-                      placeholder="Please specify any dietary restrictions, special requests, or preferences..."></textarea>
+            <textarea v-model="quotationForm.additionalRequests" rows="4"
+              placeholder="Please specify any dietary restrictions, special requests, or preferences..."></textarea>
           </div>
 
           <div class="form-actions">
@@ -410,13 +424,16 @@ export default {
     },
     filteredQuotations() {
       if (this.activeTab === 'all') return this.allQuotations
+      if (this.activeTab === 'quoted') {
+        return this.allQuotations.filter(q => this.isQuotedLikeStatus(q.status))
+      }
       return this.allQuotations.filter(q => q.status === this.activeTab)
     },
     pendingCount() {
       return this.allQuotations.filter(q => q.status === 'pending').length
     },
     quotedCount() {
-      return this.allQuotations.filter(q => q.status === 'quoted').length
+      return this.allQuotations.filter(q => this.isQuotedLikeStatus(q.status)).length
     },
     acceptedCount() {
       return this.allQuotations.filter(q => q.status === 'accepted').length
@@ -475,6 +492,15 @@ export default {
     getProviderName(quotation) {
       return quotation?.providerId?.businessName || quotation?.providerId?.username || 'Catering Provider'
     },
+    isQuotedLikeStatus(status) {
+      return status === 'quoted' || status === 'quotedEdited'
+    },
+    getStatusDisplayText(status) {
+      if (status === 'quoted' || status === 'quotedEdited') {
+        return status === 'quotedEdited' ? 'QUOTED EDITED' : 'QUOTE RECEIVED'
+      }
+      return String(status || 'pending').toUpperCase()
+    },
     getPackageName(quotation) {
       return quotation?.packageId?.name || quotation?.packageName || 'Custom Package'
     },
@@ -483,6 +509,34 @@ export default {
       const pax = Number(quotation?.numberOfGuests || 0)
       if (!quotedAmount || !pax) return 0
       return quotedAmount / pax
+    },
+    getPackageName(quotation) {
+      return quotation?.packageId?.name || quotation?.packageName || 'Custom Package'
+    },
+
+    // ADD THIS NEW METHOD HERE
+    getOriginalPackagePrice(quotation) {
+      const pkg = quotation?.packageId;
+      if (!pkg) return 0;
+
+      const basePrice = Number(pkg.price || 0);
+      const guests = Number(quotation.numberOfGuests || 0);
+
+      // Checks if it's a Lump Sum package based on name or a boolean flag
+      const isLumpSum = pkg.name?.toLowerCase().includes('lump sum') ||
+        pkg.isLumpSumPackage === true;
+
+      if (isLumpSum) {
+        // For Lump Sum, the "Original Price" is just the flat base price
+        return basePrice;
+      }
+
+      // For Normal packages, return Price * Guests
+      return basePrice * guests;
+    },
+
+    getQuotedPerPax(quotation) {
+      // ... existing code
     },
     resolveUploadUrl(filePath) {
       if (!filePath) return ''
@@ -603,7 +657,7 @@ export default {
           }
 
           body
-            .split(/,/) 
+            .split(/,/)
             .map(part => part.trim())
             .filter(Boolean)
             .forEach(item => addGroupItem(category, item))
@@ -688,12 +742,12 @@ export default {
       if (confirm('Accept this quotation and add to cart for checkout?')) {
         try {
           await this.quotationsStore.acceptQuotation(quotation._id || quotation.id)
-          
+
           // Automatically add to cart
           this.addQuotationToCart(quotation)
-          
+
           alert('Quotation accepted and added to cart! Redirecting to checkout...')
-          
+
           // Redirect to checkout after 1 second
           setTimeout(() => {
             this.$router.push('/checkout')
@@ -719,10 +773,10 @@ export default {
     },
     addQuotationToCart(quotation) {
       const cartStore = useCartStore()
-      
+
       // Clear existing cart items to avoid conflicts
       cartStore.clearCart()
-      
+
       // Create cart item from quotation
       const cartItem = {
         id: `quotation-${quotation._id}`,
@@ -741,9 +795,9 @@ export default {
         location: quotation.location,
         specialRequirements: quotation.additionalRequests
       }
-      
+
       cartStore.addToCart(cartItem)
-      
+
       // Store quotation reference
       sessionStorage.setItem('quotationOrder', JSON.stringify({
         quotationId: quotation._id,
@@ -765,7 +819,7 @@ export default {
       this.quotationForm.email = this.authStore.user.email || ''
       this.quotationForm.phoneNumber = this.authStore.user.phone || ''
     }
-    
+
     // Fetch quotations
     await this.quotationsStore.fetchMyQuotations()
   }
@@ -775,7 +829,8 @@ export default {
 <style scoped>
 /* Main Layout */
 .quotations-page {
-  display: flex; /* Changed to flex to align with sidebar */
+  display: flex;
+  /* Changed to flex to align with sidebar */
   min-height: 100vh;
   background-color: #f8fafc;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -783,7 +838,8 @@ export default {
 
 .quotations-container {
   flex: 1;
-  margin-left: 260px; /* Offset for the fixed Navbar */
+  margin-left: 260px;
+  /* Offset for the fixed Navbar */
   width: calc(100% - 260px);
 }
 
@@ -810,7 +866,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 20%),
     radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 20%);
   z-index: 1;
@@ -909,7 +965,7 @@ export default {
 .tabs button.active {
   background: #f1f5f9;
   color: #0f172a;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .count-badge {
@@ -1014,10 +1070,26 @@ export default {
   height: 4px;
   width: 100%;
 }
-.card-status-bar.pending { background: #f59e0b; }
-.card-status-bar.quoted { background: #3b82f6; }
-.card-status-bar.accepted { background: #10b981; }
-.card-status-bar.rejected { background: #ef4444; }
+
+.card-status-bar.pending {
+  background: #f59e0b;
+}
+
+.card-status-bar.quoted {
+  background: #3b82f6;
+}
+
+.card-status-bar.quotedEdited {
+  background: #2563eb;
+}
+
+.card-status-bar.accepted {
+  background: #10b981;
+}
+
+.card-status-bar.rejected {
+  background: #ef4444;
+}
 
 .card-header {
   padding: 20px;
@@ -1047,12 +1119,36 @@ export default {
   padding: 4px 10px;
   border-radius: 20px;
   letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
-.status-badge.pending { background: #fffbeb; color: #b45309; }
-.status-badge.quoted { background: #eff6ff; color: #1d4ed8; }
-.status-badge.accepted { background: #f0fdf4; color: #15803d; }
-.status-badge.rejected { background: #fef2f2; color: #b91c1c; }
+.status-badge.pending {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.status-badge.quoted {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-badge.quotedEdited {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.status-badge.accepted {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.status-badge.rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+}
 
 .event-title {
   font-size: 1.1rem;
@@ -1410,7 +1506,8 @@ export default {
   margin-top: 20px;
 }
 
-.btn-accept-full, .btn-proceed-full {
+.btn-accept-full,
+.btn-proceed-full {
   flex: 1;
   background: #16a34a;
   color: white;
@@ -1422,7 +1519,8 @@ export default {
   transition: all 0.2s;
 }
 
-.btn-accept-full:hover, .btn-proceed-full:hover {
+.btn-accept-full:hover,
+.btn-proceed-full:hover {
   background: #15803d;
 }
 
@@ -1596,11 +1694,11 @@ export default {
   .hero-content h1 {
     font-size: 2rem;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .quotations-grid {
     grid-template-columns: 1fr;
   }

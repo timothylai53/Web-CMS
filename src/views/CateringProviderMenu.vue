@@ -40,7 +40,10 @@
       <div v-if="activeTab === 'packages'" class="dashboard-section">
         <div class="section-header">
           <h3>Your Packages</h3>
-          <button @click="openPackageModal()" class="btn-primary-action">+ New Package</button>
+          <div class="header-actions">
+            <button @click="openPackageModal()" class="btn-primary-action">+ New Package</button>
+            <button @click="openSpecialPackageModal()" class="btn-special-action">+ Special Package (Lump Sum)</button>
+          </div>
         </div>
 
         <div v-if="packages.length === 0" class="empty-state">
@@ -63,9 +66,15 @@
             </div>
             
             <div class="pkg-price-row">
-              <span class="currency">RM</span>
-              <span class="amount">{{ pkg.price?.toFixed(2) }}</span>
-              <span class="per-pax">/ pax</span>
+              <div class="price-main">
+                <span class="currency">RM</span>
+                <span class="amount">{{ pkg.price?.toFixed(2) }}</span>
+                <span class="per-pax">/ pax</span>
+              </div>
+              <div class="min-pax-inline">
+                <span class="min-pax-label">Min Pax</span>
+                <span class="min-pax-value">{{ pkg.minPax || pkg.maxPax || 1 }}</span>
+              </div>
             </div>
             <div
               v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0"
@@ -77,10 +86,6 @@
             <p class="pkg-desc">{{ pkg.description || 'No description provided.' }}</p>
             
             <div class="pkg-meta">
-              <div class="meta-item">
-                <span class="label">Min Pax</span>
-                <span class="value">{{ pkg.minPax || pkg.maxPax || 1 }}</span>
-              </div>
               <div class="meta-item">
                 <span class="label">Waiters</span>
                 <span class="value">{{ pkg.waitersAvailable ? `${pkg.waiterQuantity || 0} included` : 'Not available' }}</span>
@@ -273,7 +278,7 @@
       <div v-if="showAddPackage || editingPackage" class="modal-overlay" @click="closePackageModal">
         <div class="modal-card" @click.stop>
           <div class="modal-header">
-            <h3>{{ editingPackage ? 'Edit Package' : 'New Package' }}</h3>
+            <h3>{{ editingPackage ? 'Edit Package' : (isSpecialPackageMode ? 'New Special Package (Lump Sum)' : 'New Package') }}</h3>
             <button class="modal-close-btn" @click="closePackageModal">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
@@ -288,8 +293,9 @@
               
               <div class="form-row">
                 <div class="form-group half">
-                  <label>Price per Pax (RM)</label>
+                  <label>{{ isSpecialPackageMode ? 'Fixed Package Price (RM)' : 'Price per Pax (RM)' }}</label>
                   <input v-model.number="packageForm.price" type="number" step="0.01" required class="form-input" />
+                  <small v-if="isSpecialPackageMode" class="helper-text">Use one fixed amount for this full package set.</small>
                 </div>
                 <div class="form-group half">
                   <label>Min Pax</label>
@@ -487,6 +493,7 @@ export default {
       showAddFood: false,
       editingPackage: null,
       editingFood: null,
+      isSpecialPackageMode: false,
       packageForm: {
         name: '',
         price: 0,
@@ -495,6 +502,7 @@ export default {
         discountEnabled: false,
         discountMinPax: null,
         discountedPrice: null,
+        isLumpSumPackage: false,
         category: 'basic',
         image: '',
         imageFile: null,
@@ -564,9 +572,8 @@ export default {
     }
   },
   methods: {
-    openPackageModal() {
-      this.editingPackage = null
-      this.packageForm = {
+    createDefaultPackageForm() {
+      return {
         name: '',
         price: 0,
         description: '',
@@ -574,6 +581,7 @@ export default {
         discountEnabled: false,
         discountMinPax: null,
         discountedPrice: null,
+        isLumpSumPackage: false,
         category: 'basic',
         image: '',
         imageFile: null,
@@ -587,10 +595,32 @@ export default {
         beverageLimit: 3,
         dessertLimit: 3
       }
+    },
+    openPackageModal() {
+      this.editingPackage = null
+      this.isSpecialPackageMode = false
+      this.packageForm = this.createDefaultPackageForm()
+      this.showAddPackage = true
+    },
+    openSpecialPackageModal() {
+      this.editingPackage = null
+      this.isSpecialPackageMode = true
+      this.packageForm = {
+        ...this.createDefaultPackageForm(),
+        name: 'Special Lump Sum Package',
+        description: 'One-set special package with fixed total price.',
+        minPax: 1,
+        isLumpSumPackage: true,
+        category: 'premium',
+        discountEnabled: false,
+        discountMinPax: null,
+        discountedPrice: null
+      }
       this.showAddPackage = true
     },
     editPackage(pkg) {
       this.editingPackage = pkg
+      this.isSpecialPackageMode = false
       this.packageForm = {
         ...pkg,
         image: pkg.image || '',
@@ -599,6 +629,7 @@ export default {
         discountEnabled: !!pkg.discountEnabled,
         discountMinPax: Number(pkg.discountMinPax) > 0 ? Number(pkg.discountMinPax) : null,
         discountedPrice: Number(pkg.discountedPrice) >= 0 ? Number(pkg.discountedPrice) : null,
+        isLumpSumPackage: !!pkg.isLumpSumPackage,
         waitersAvailable: !!pkg.waitersAvailable,
         waiterQuantity: Number(pkg.waiterQuantity) > 0 ? Number(pkg.waiterQuantity) : 1,
         waiterFee: Number(pkg.waiterFee) >= 0 ? Number(pkg.waiterFee) : 0,
@@ -652,6 +683,7 @@ export default {
           discountEnabled: hasDiscount,
           discountMinPax,
           discountedPrice,
+          isLumpSumPackage: this.isSpecialPackageMode || !!this.packageForm.isLumpSumPackage,
           category: this.packageForm.category,
           image: this.packageForm.image || null,
           waitersAvailable: !!this.packageForm.waitersAvailable,
@@ -688,27 +720,8 @@ export default {
     closePackageModal() {
       this.showAddPackage = false
       this.editingPackage = null
-      this.packageForm = {
-        name: '',
-        price: 0,
-        description: '',
-        minPax: 1,
-        discountEnabled: false,
-        discountMinPax: null,
-        discountedPrice: null,
-        category: 'basic',
-        image: '',
-        imageFile: null,
-        waitersAvailable: false,
-        waiterQuantity: 1,
-        waiterFee: 0,
-        venueAvailable: false,
-        venueFee: 0,
-        mainDishLimit: 8,
-        sideDishLimit: 5,
-        beverageLimit: 3,
-        dessertLimit: 3
-      }
+      this.isSpecialPackageMode = false
+      this.packageForm = this.createDefaultPackageForm()
     },
     onPackageImageChange(event) {
       const file = event.target.files?.[0] || null
@@ -945,6 +958,12 @@ export default {
   margin-bottom: 24px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .section-header h3 {
   font-size: 18px;
   font-weight: 700;
@@ -1054,6 +1073,13 @@ export default {
   margin-bottom: 16px;
   color: #0f172a;
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.price-main {
+  display: flex;
   align-items: baseline;
   gap: 4px;
 }
@@ -1061,6 +1087,24 @@ export default {
 .currency { font-size: 14px; font-weight: 600; color: #64748b; }
 .amount { font-size: 24px; font-weight: 800; }
 .per-pax { font-size: 13px; color: #94a3b8; }
+
+.min-pax-inline {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.min-pax-label {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.min-pax-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+}
 
 .pkg-desc {
   font-size: 14px;
@@ -1372,6 +1416,21 @@ input:checked + .slider:before { transform: translateX(16px); }
   cursor: pointer;
 }
 
+.btn-special-action {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-special-action:hover {
+  background: #d97706;
+}
+
 .btn-secondary-action {
   background:white;
   color: #0f172a;
@@ -1480,6 +1539,9 @@ input:checked + .slider:before { transform: translateX(16px); }
 @media (max-width: 768px) {
   .admin-content { margin-left: 0; width: 100%; padding: 16px; padding-bottom: 80px; }
   .packages-grid { grid-template-columns: 1fr; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .header-actions { width: 100%; flex-direction: column; }
+  .btn-primary-action, .btn-special-action { width: 100%; }
   .quick-search-row { flex-direction: column; }
   .quick-add-row { flex-direction: column; }
   .btn-quick-add { width: 100%; }

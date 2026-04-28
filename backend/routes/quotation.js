@@ -9,6 +9,8 @@ import { sendEmail, sendQuotationStatusEmail } from '../services/emailService.js
 
 const router = express.Router();
 
+const PACKAGE_POPULATE_FIELDS = 'name price discountEnabled discountMinPax discountedPrice waitersAvailable waiterQuantity waiterFee venueAvailable venueFee';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -126,7 +128,7 @@ router.get('/my-quotations', authenticate, async (req, res) => {
   try {
     const quotations = await Quotation.find({ userId: req.user.userId })
       .populate('providerId', 'businessName email phone')
-      .populate('packageId', 'name price')
+      .populate('packageId', PACKAGE_POPULATE_FIELDS)
       .sort({ createdAt: -1 });
     res.json(quotations);
   } catch (error) {
@@ -140,7 +142,7 @@ router.get('/', authenticate, isAdmin, async (req, res) => {
     const quotations = await Quotation.find()
       .populate('userId', 'username email')
       .populate('providerId', 'businessName email phone')
-      .populate('packageId', 'name price')
+      .populate('packageId', PACKAGE_POPULATE_FIELDS)
       .sort({ createdAt: -1 });
     res.json(quotations);
   } catch (error) {
@@ -154,7 +156,7 @@ router.get('/:id', authenticate, async (req, res) => {
     const quotation = await Quotation.findById(req.params.id)
       .populate('userId', 'username email')
       .populate('providerId', 'businessName email phone')
-      .populate('packageId', 'name price');
+      .populate('packageId', PACKAGE_POPULATE_FIELDS);
     
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
@@ -181,7 +183,8 @@ router.put('/:id', authenticate, isAdmin, async (req, res) => {
       { new: true }
     )
       .populate('userId', 'username email')
-      .populate('providerId', 'businessName email');
+      .populate('providerId', 'businessName email')
+      .populate('packageId', PACKAGE_POPULATE_FIELDS);
 
     if (!quotation) {
       return res.status(404).json({ message: 'Quotation not found' });
@@ -224,7 +227,7 @@ router.put('/:id/accept', authenticate, async (req, res) => {
     const updatedQuotation = await Quotation.findById(quotation._id)
       .populate('userId', 'username email')
       .populate('providerId', 'businessName email phone')
-      .populate('packageId', 'name price');
+      .populate('packageId', PACKAGE_POPULATE_FIELDS);
 
     await sendEmail({
       to: updatedQuotation?.providerId?.email,
@@ -261,7 +264,7 @@ router.put('/:id/reject', authenticate, async (req, res) => {
     const updatedQuotation = await Quotation.findById(quotation._id)
       .populate('userId', 'username email')
       .populate('providerId', 'businessName email phone')
-      .populate('packageId', 'name price');
+      .populate('packageId', PACKAGE_POPULATE_FIELDS);
 
     await sendEmail({
       to: updatedQuotation?.providerId?.email,

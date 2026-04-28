@@ -1,158 +1,190 @@
 <template>
   <div class="admin-container">
     <Navbar />
-    
+
     <div class="admin-content">
       <template v-if="!isQuoteEditor">
-      <!-- Modern Hero -->
-      <div class="dashboard-hero">
-        <div class="hero-bg"></div>
-        <div class="hero-content">
-          <div class="hero-text">
-            <h2>Quotation Management</h2>
-            <p>Review requests, send quotes, and manage customer inquiries.</p>
-          </div>
-          <div class="stats-summary">
-            <div class="stat-pill blue">
-              <span class="label">Total</span>
-              <span class="value">{{ allQuotations.length }}</span>
+        <!-- Modern Hero -->
+        <div class="dashboard-hero">
+          <div class="hero-bg"></div>
+          <div class="hero-content">
+            <div class="hero-text">
+              <h2>Quotation Management</h2>
+              <p>Review requests, send quotes, and manage customer inquiries.</p>
             </div>
-            <div class="stat-pill yellow">
-              <span class="label">Pending</span>
-              <span class="value">{{ pendingCount }}</span>
+            <div class="stats-summary">
+              <div class="stat-pill blue">
+                <span class="label">Total</span>
+                <span class="value">{{ allQuotations.length }}</span>
+              </div>
+              <div class="stat-pill yellow">
+                <span class="label">Pending</span>
+                <span class="value">{{ pendingCount }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Filters -->
-      <div class="dashboard-section">
-        <div class="filters-bar">
-          <button @click="filterStatus = 'all'" :class="['filter-btn', { active: filterStatus === 'all' }]">
-            All Requests
-          </button>
-          <button @click="filterStatus = 'pending'" :class="['filter-btn', { active: filterStatus === 'pending' }]">
-            Pending <span v-if="pendingCount" class="badge-count">{{ pendingCount }}</span>
-          </button>
-          <button @click="filterStatus = 'quoted'" :class="['filter-btn', { active: filterStatus === 'quoted' }]">
-            Quoted <span v-if="quotedCount" class="badge-count">{{ quotedCount }}</span>
-          </button>
-          <button @click="filterStatus = 'accepted'" :class="['filter-btn', { active: filterStatus === 'accepted' }]">
-            Accepted <span v-if="acceptedCount" class="badge-count">{{ acceptedCount }}</span>
-          </button>
-           <button @click="filterStatus = 'rejected'" :class="['filter-btn', { active: filterStatus === 'rejected' }]">
-            Rejected <span v-if="rejectedCount" class="badge-count">{{ rejectedCount }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Quotations Table -->
-      <div class="dashboard-section">
-        <div class="recent-orders-card">
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>Quotation ID</th>
-                  <th>Customer Details</th>
-                  <th>Event Info</th>
-                  <th>Package</th>
-                  <th>Quoted Amount</th>
-                  <th>Status</th>
-                  <th>Submitted</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="filteredQuotations.length === 0">
-                  <td colspan="8" class="empty-cell">
-                    <div class="empty-state">
-                      <div class="empty-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path></svg>
-                      </div>
-                      <p>No quotations found matching your filter.</p>
-                    </div>
-                  </td>
-                </tr>
-                <tr v-for="quotation in filteredQuotations" :key="quotation._id">
-                  <td class="order-id">
-                    #{{ (quotation.quotationNumber || quotation._id || '').slice(-6).toUpperCase() }}
-                  </td>
-                  <td>
-                    <div class="customer-info">
-                      <div class="avatar-placeholder">{{ (quotation.customerName || 'U').charAt(0) }}</div>
-                      <div>
-                        <div class="customer-name">{{ quotation.customerName || 'Unknown' }}</div>
-                        <div class="customer-contact">{{ getCustomerEmail(quotation) }}</div>
-                        <div class="customer-contact">{{ getCustomerPhone(quotation) }}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="event-info-cell">
-                    <div class="event-info">
-                      <div class="event-row event-date">
-                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        <span class="event-text">{{ formatDate(quotation.eventDate) }}</span>
-                      </div>
-                      <div class="event-row event-guests">
-                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        <span class="event-text">{{ quotation.numberOfGuests }} Guests</span>
-                      </div>
-                      <div class="event-row event-guests">
-                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="m18 20-6-6-6 6"></path><path d="M12 4v2"></path></svg>
-                        <span class="event-text">{{ quotation.eventType || 'General Event' }}</span>
-                      </div>
-                      <div class="event-row event-location">
-                        <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        <span class="event-text">{{ getEventLocation(quotation) }}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="package-name">{{ getPackageName(quotation) }}</td>
-                  <td>
-                    <span v-if="quotation.quotedAmount !== null && quotation.quotedAmount !== undefined" class="quote-amount-cell">RM {{ Number(quotation.quotedAmount).toFixed(2) }}</span>
-                    <span v-else class="quote-amount-cell pending">Not quoted</span>
-                  </td>
-                  <td>
-                    <span :class="['status-badge', quotation.status]">
-                      {{ quotation.status }}
-                    </span>
-                  </td>
-                  <td class="timestamp">{{ formatDate(quotation.createdAt) }}</td>
-                  <td>
-                     <button 
-                      v-if="quotation.status === 'pending'" 
-                      @click="openQuoteModal(quotation)" 
-                      class="btn-primary-action"
-                    >
-                      Send Quote
-                    </button>
-                    <button 
-                      v-else
-                      @click="viewQuotation(quotation)" 
-                      class="btn-view-details"
-                    >
-                      Details
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- Filters -->
+        <div class="dashboard-section">
+          <div class="filters-bar">
+            <button @click="filterStatus = 'all'" :class="['filter-btn', { active: filterStatus === 'all' }]">
+              All Requests
+            </button>
+            <button @click="filterStatus = 'pending'" :class="['filter-btn', { active: filterStatus === 'pending' }]">
+              Pending <span v-if="pendingCount" class="badge-count">{{ pendingCount }}</span>
+            </button>
+            <button @click="filterStatus = 'quoted'" :class="['filter-btn', { active: filterStatus === 'quoted' }]">
+              Quoted <span v-if="quotedCount" class="badge-count">{{ quotedCount }}</span>
+            </button>
+            <button @click="filterStatus = 'accepted'" :class="['filter-btn', { active: filterStatus === 'accepted' }]">
+              Accepted <span v-if="acceptedCount" class="badge-count">{{ acceptedCount }}</span>
+            </button>
+            <button @click="filterStatus = 'rejected'" :class="['filter-btn', { active: filterStatus === 'rejected' }]">
+              Rejected <span v-if="rejectedCount" class="badge-count">{{ rejectedCount }}</span>
+            </button>
           </div>
         </div>
-      </div>
+
+        <!-- Quotations Table -->
+        <div class="dashboard-section">
+          <div class="recent-orders-card">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Quotation ID</th>
+                    <th>Customer Details</th>
+                    <th>Event Info</th>
+                    <th>Package</th>
+                    <th>Quoted Amount</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="filteredQuotations.length === 0">
+                    <td colspan="8" class="empty-cell">
+                      <div class="empty-state">
+                        <div class="empty-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z">
+                            </path>
+                          </svg>
+                        </div>
+                        <p>No quotations found matching your filter.</p>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-for="quotation in filteredQuotations" :key="quotation._id">
+                    <td class="order-id">
+                      #{{ (quotation.quotationNumber || quotation._id || '').slice(-6).toUpperCase() }}
+                    </td>
+                    <td>
+                      <div class="customer-info">
+                        <div class="avatar-placeholder">{{ (quotation.customerName || 'U').charAt(0) }}</div>
+                        <div>
+                          <div class="customer-name">{{ quotation.customerName || 'Unknown' }}</div>
+                          <div class="customer-contact">{{ getCustomerEmail(quotation) }}</div>
+                          <div class="customer-contact">{{ getCustomerPhone(quotation) }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="event-info-cell">
+                      <div class="event-info">
+                        <div class="event-row event-date">
+                          <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                          </svg>
+                          <span class="event-text">{{ formatDate(quotation.eventDate) }}</span>
+                        </div>
+                        <div class="event-row event-guests">
+                          <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                          <span class="event-text">{{ quotation.numberOfGuests }} Guests</span>
+                        </div>
+                        <div class="event-row event-guests">
+                          <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20V10"></path>
+                            <path d="m18 20-6-6-6 6"></path>
+                            <path d="M12 4v2"></path>
+                          </svg>
+                          <span class="event-text">{{ quotation.eventType || 'General Event' }}</span>
+                        </div>
+                        <div class="event-row event-location">
+                          <svg class="event-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                          </svg>
+                          <span class="event-text">{{ getEventLocation(quotation) }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="package-name">{{ getPackageName(quotation) }}</td>
+                    <td>
+                      <span v-if="quotation.quotedAmount !== null && quotation.quotedAmount !== undefined"
+                        class="quote-amount-cell">RM {{ Number(quotation.quotedAmount).toFixed(2) }}</span>
+                      <span v-else class="quote-amount-cell pending">Not quoted</span>
+                    </td>
+                    <td>
+                      <span :class="['status-badge', quotation.status]">
+                        {{ formatQuotationStatus(quotation.status) }}
+                      </span>
+                    </td>
+                    <td class="timestamp">{{ formatDate(quotation.createdAt) }}</td>
+                    <td>
+                      <button v-if="quotation.status === 'pending'" @click="openQuoteModal(quotation)"
+                        class="btn-primary-action">
+                        Send Quote
+                      </button>
+                      <button v-else-if="canEditQuotedQuotation(quotation)" @click="openQuoteModal(quotation)"
+                        class="btn-edit-quote">
+                        Edit Quote
+                      </button>
+                      <button v-else @click="viewQuotation(quotation)" class="btn-view-details">
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
       </template>
 
       <div v-else class="quote-editor-page">
         <div class="quote-editor-header">
           <button class="btn-back" @click="closeQuoteModal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
             Back to Manage Quotations
           </button>
           <div class="quote-editor-title">
-            <h3>Publish Quotation</h3>
-            <p v-if="selectedQuotation" class="order-date">For Request #{{ (selectedQuotation.quotationNumber || selectedQuotation._id || '').slice(-6).toUpperCase() }}</p>
+            <h3>{{ isEditingQuoted ? 'Edit & Resubmit Quotation' : 'Publish Quotation' }}</h3>
+            <p v-if="selectedQuotation" class="order-date">For Request #{{ (selectedQuotation.quotationNumber ||
+              selectedQuotation._id || '').slice(-6).toUpperCase() }}</p>
           </div>
         </div>
 
@@ -203,22 +235,21 @@
                   No special requirements submitted.
                 </div>
                 <div v-else class="requirements-grouped">
-                  <div
-                    v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
-                    :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}`"
-                    class="req-category"
-                  >
+                  <div v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
+                    :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}`" class="req-category">
                     <div class="req-cat-title">{{ group.name }}</div>
                     <p v-if="isSingleLineRequirementCategory(group.name)" class="req-single-line">
                       {{ getSingleLineRequirement(group) }}
                     </p>
                     <ol v-else-if="shouldUseNumberedRequirements(group.name)" class="req-list numbered">
-                      <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
+                      <li v-for="(item, itemIndex) in group.items"
+                        :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
                         {{ item }}
                       </li>
                     </ol>
                     <ul v-else class="req-list normal">
-                      <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
+                      <li v-for="(item, itemIndex) in group.items"
+                        :key="`${selectedQuotation._id || 'quotation'}-group-${groupIndex}-item-${itemIndex}`">
                         {{ item }}
                       </li>
                     </ul>
@@ -244,26 +275,21 @@
                   <label>Total Price (RM) *</label>
                   <div class="input-wrapper">
                     <span class="currency-prefix">RM</span>
-                    <input
-                      type="number"
-                      v-model.number="quoteForm.price"
-                      step="0.01"
-                      required
-                      class="form-input"
-                      placeholder="0.00"
-                    >
+                    <input type="number" v-model.number="quoteForm.price" @input="markPriceAsManual"
+                      @blur="normalizeManualPrice" step="0.01" required class="form-input" placeholder="0.00">
+                  </div>
+                  <div class="price-auto-helper">
+                    <span>Auto Total (Subtotal + Additional Items): <strong>RM {{ autoCalculatedTotal.toFixed(2)
+                        }}</strong></span>
+                    <button type="button" class="btn-use-auto" @click="applyAutoCalculatedTotal(true)">Use Auto
+                      Total</button>
                   </div>
                 </div>
 
                 <div class="form-group">
                   <label>Quotation Message to Customer *</label>
-                  <textarea
-                    v-model="quoteForm.message"
-                    rows="4"
-                    required
-                    class="form-textarea"
-                    placeholder="Describe your offer, menus included, and terms..."
-                  ></textarea>
+                  <textarea v-model="quoteForm.message" rows="4" required class="form-textarea"
+                    placeholder="Describe your offer, menus included, and terms..."></textarea>
                 </div>
 
                 <div class="form-group">
@@ -277,71 +303,74 @@
                       <span>Action</span>
                     </div>
 
-                    <div
-                      v-for="(item, index) in quoteForm.additionalItems"
-                      :key="`additional-item-${index}`"
-                      class="additional-item-row"
-                    >
-                      <input
-                        v-model="item.name"
-                        type="text"
-                        class="form-input"
-                        placeholder="e.g. Extra Waiter"
-                      >
-                      <input
-                        v-model="item.category"
-                        type="text"
-                        class="form-input"
-                        placeholder="e.g. Service / Main Dish"
-                      >
-                      <input
-                        v-model.number="item.quantity"
-                        type="number"
-                        min="1"
-                        class="form-input"
-                        placeholder="1"
-                      >
-                      <input
-                        v-model.number="item.total"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        class="form-input"
-                        placeholder="0.00"
-                      >
+                    <div v-for="(item, index) in quoteForm.additionalItems" :key="`additional-item-${index}`"
+                      class="additional-item-row">
+                      <input v-if="item.__customName" v-model="item.name" type="text" class="form-input"
+                        placeholder="Type custom item name" @blur="handleCustomItemNameBlur(item)">
+                      <select v-else class="form-input" :value="item.name"
+                        @change="handleAdditionalItemNameChange(item, $event.target.value)">
+                        <option value="">Choose default item...</option>
+                        <option v-for="option in additionalItemNameOptions" :key="`name-pick-${option}`"
+                          :value="option">
+                          {{ option }}
+                        </option>
+                        <option value="__other__">Other...</option>
+                      </select>
+
+                      <input v-if="item.__customCategory" v-model="item.category" type="text" class="form-input"
+                        placeholder="Type custom category" @blur="handleCustomItemCategoryBlur(item)">
+                      <select v-else class="form-input" :value="item.category"
+                        @change="handleAdditionalItemCategoryChange(item, $event.target.value)">
+                        <option value="">Choose default category...</option>
+                        <option v-for="option in additionalItemCategoryOptions" :key="`category-pick-${option}`"
+                          :value="option">
+                          {{ option }}
+                        </option>
+                        <option value="__other__">Other...</option>
+                      </select>
+                      <input v-model.number="item.quantity" type="number" min="1" class="form-input" placeholder="1">
+                      <input v-model.number="item.total" type="number" min="0" step="0.01" class="form-input"
+                        placeholder="0.00">
                       <button type="button" class="btn-remove-item" @click="removeAdditionalItem(index)">Remove</button>
                     </div>
 
                     <div class="additional-items-actions">
                       <button type="button" class="btn-add-item" @click="addAdditionalItem">+ Add Item</button>
-                      <div class="additional-items-total">Additional Items Total: <strong>RM {{ additionalItemsTotal.toFixed(2) }}</strong></div>
+                      <div class="additional-items-total">Additional Items Total: <strong>RM {{
+                        additionalItemsTotal.toFixed(2) }}</strong></div>
                     </div>
                   </div>
                 </div>
 
                 <div class="form-group">
                   <label>Validity (Days) *</label>
-                  <input
-                    type="number"
-                    v-model.number="quoteForm.validUntilDays"
-                    min="1"
-                    class="form-input"
-                    required
-                  >
+                  <input type="number" v-model.number="quoteForm.validUntilDays" min="1" class="form-input" required>
                 </div>
 
                 <div class="form-group">
                   <label>Internal Notes (Optional)</label>
-                  <textarea
-                    v-model="quoteForm.notes"
-                    rows="2"
-                    class="form-textarea"
-                    placeholder="Notes for your team..."
-                  ></textarea>
+                  <textarea v-model="quoteForm.notes" rows="2" class="form-textarea"
+                    placeholder="Notes for your team..."></textarea>
                 </div>
 
                 <div class="quote-preview-box">
-                  <div class="preview-row"><span>Quoted Total</span><strong>RM {{ Number(quoteForm.price || 0).toFixed(2) }}</strong></div>
+                  <div class="preview-row">
+                    <span>Original Package Price</span>
+                    <strong>{{ getPackagePriceReference(selectedQuotation) }}</strong>
+                  </div>
+                  <div class="preview-row"><span>Discounted Package Price</span><strong>RM {{
+                    packagePricingBreakdown.discountedPackageSubtotal.toFixed(2) }}</strong></div>
+                  <div class="preview-row"><span>Waiter Service</span><strong>RM {{
+                    packagePricingBreakdown.waiterServiceSubtotal.toFixed(2) }}</strong></div>
+                  <div class="preview-row"><span>Venue Service</span><strong>RM {{
+                    packagePricingBreakdown.venueServiceSubtotal.toFixed(2) }}</strong></div>
+                  <div class="preview-row"><span>Package Subtotal</span><strong>RM {{ packageBaseSubtotal.toFixed(2)
+                      }}</strong></div>
+                  <div class="preview-row"><span>Additional Items</span><strong>RM {{ additionalItemsTotal.toFixed(2)
+                      }}</strong></div>
+                  <div class="preview-row"><span>Quoted Total</span><strong>RM {{ Number(quoteForm.price ||
+                    0).toFixed(2)
+                      }}</strong></div>
                   <div class="preview-row"><span>Per Pax</span><strong>RM {{ quotedPerPax.toFixed(2) }}</strong></div>
                   <div class="preview-row"><span>Valid Until</span><strong>{{ quoteValidUntilDate }}</strong></div>
                 </div>
@@ -357,22 +386,27 @@
         </div>
       </div>
 
-       <!-- View Details Modal -->
+      <!-- View Details Modal -->
       <div v-if="showDetailsModal" class="modal-overlay" @click="closeDetailsModal">
         <div class="modal-card" @click.stop>
           <div class="modal-header">
             <div>
               <h3>Quotation Details</h3>
-              <p class="order-date">#{{ (selectedQuotation.quotationNumber || selectedQuotation._id || '').slice(-6).toUpperCase() }}</p>
+              <p class="order-date">#{{ (selectedQuotation.quotationNumber || selectedQuotation._id ||
+                '').slice(-6).toUpperCase() }}</p>
             </div>
             <button class="modal-close-btn" @click="closeDetailsModal">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
           </div>
-          
+
           <div class="modal-content-scroll">
             <div class="modal-grid">
-               <!-- Customer & Event Card -->
+              <!-- Customer & Event Card -->
               <div class="info-card">
                 <h4>Customer & Event</h4>
                 <div class="info-row">
@@ -383,7 +417,7 @@
                   <span class="label">Contact</span>
                   <span class="value">{{ getCustomerPhone(selectedQuotation) }}</span>
                 </div>
-                 <div class="info-row">
+                <div class="info-row">
                   <span class="label">Email</span>
                   <span class="value">{{ getCustomerEmail(selectedQuotation) }}</span>
                 </div>
@@ -396,7 +430,7 @@
                   <span class="label">Time</span>
                   <span class="value">{{ selectedQuotation.eventTime || 'Not Set' }}</span>
                 </div>
-                 <div class="info-row">
+                <div class="info-row">
                   <span class="label">Guests</span>
                   <span class="value">{{ selectedQuotation.numberOfGuests }} Pax</span>
                 </div>
@@ -419,45 +453,47 @@
                 <h4>Quotation Status</h4>
                 <div class="info-row">
                   <span class="label">Current Status</span>
-                  <span :class="['status-badge', selectedQuotation.status]">{{ selectedQuotation.status }}</span>
+                  <span :class="['status-badge', selectedQuotation.status]">{{
+                    formatQuotationStatus(selectedQuotation.status)
+                  }}</span>
                 </div>
-                 <div class="info-row">
+                <div class="info-row">
                   <span class="label">Submitted On</span>
                   <span class="value">{{ formatDate(selectedQuotation.createdAt) }}</span>
                 </div>
-                
+
                 <div v-if="selectedQuotation.status !== 'pending'" class="quote-result-box">
                   <div class="quote-price-large">RM {{ Number(selectedQuotation.quotedAmount || 0).toFixed(2) }}</div>
                   <div class="quote-date">Quoted on {{ formatDate(selectedQuotation.updatedAt) }}</div>
                   <div class="quote-date">Per Pax RM {{ getQuotedPerPax(selectedQuotation).toFixed(2) }}</div>
                   <div class="divider"></div>
-                  <p class="quote-message">{{ selectedQuotation.adminNotes || 'No additional message from provider.' }}</p>
+                  <p class="quote-message">{{ selectedQuotation.adminNotes || 'No additional message from provider.' }}
+                  </p>
                 </div>
               </div>
             </div>
-            
+
             <div class="notes-section">
               <h4>Special Requirements (Grouped)</h4>
               <div v-if="getCategorizedRequirements(selectedQuotation).length === 0" class="requirements-empty">
                 No special requirements submitted.
               </div>
               <div v-else class="requirements-grouped">
-                <div
-                  v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
-                  :key="`${selectedQuotation._id || 'quotation'}-details-group-${groupIndex}`"
-                  class="req-category"
-                >
+                <div v-for="(group, groupIndex) in getCategorizedRequirements(selectedQuotation)"
+                  :key="`${selectedQuotation._id || 'quotation'}-details-group-${groupIndex}`" class="req-category">
                   <div class="req-cat-title">{{ group.name }}</div>
                   <p v-if="isSingleLineRequirementCategory(group.name)" class="req-single-line">
                     {{ getSingleLineRequirement(group) }}
                   </p>
                   <ol v-else-if="shouldUseNumberedRequirements(group.name)" class="req-list numbered">
-                    <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-details-group-${groupIndex}-item-${itemIndex}`">
+                    <li v-for="(item, itemIndex) in group.items"
+                      :key="`${selectedQuotation._id || 'quotation'}-details-group-${groupIndex}-item-${itemIndex}`">
                       {{ item }}
                     </li>
                   </ol>
                   <ul v-else class="req-list normal">
-                    <li v-for="(item, itemIndex) in group.items" :key="`${selectedQuotation._id || 'quotation'}-details-group-${groupIndex}-item-${itemIndex}`">
+                    <li v-for="(item, itemIndex) in group.items"
+                      :key="`${selectedQuotation._id || 'quotation'}-details-group-${groupIndex}-item-${itemIndex}`">
                       {{ item }}
                     </li>
                   </ul>
@@ -465,7 +501,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="modal-footer">
             <button @click="closeDetailsModal" class="btn-close">Close</button>
           </div>
@@ -492,6 +528,31 @@ export default {
       isQuoteEditor: false,
       showDetailsModal: false,
       selectedQuotation: null,
+      baseQuoteAmount: 0,
+      isPriceManuallyEdited: false,
+      additionalItemNameOptions: [
+        'Extra Waiter',
+        'Additional Main Dish',
+        'Additional Side Dish',
+        'Additional Beverage',
+        'Additional Dessert',
+        'VIP Table Setup',
+        'Canopy Rental',
+        'Transport Fee',
+        'Overtime Service',
+        'Equipment Rental'
+      ],
+      additionalItemCategoryOptions: [
+        'Service',
+        'Main Dish',
+        'Side Dish',
+        'Beverage',
+        'Dessert',
+        'Equipment',
+        'Logistics',
+        'Venue',
+        'Other'
+      ],
       quoteForm: {
         price: null,
         message: '',
@@ -521,7 +582,11 @@ export default {
     filteredQuotations() {
       let quotes = this.allQuotations
       if (this.filterStatus !== 'all') {
-        quotes = this.allQuotations.filter(q => q.status === this.filterStatus)
+        if (this.filterStatus === 'quoted') {
+          quotes = this.allQuotations.filter(q => this.isQuotedLikeStatus(q.status))
+        } else {
+          quotes = this.allQuotations.filter(q => q.status === this.filterStatus)
+        }
       }
       // Sort newest first
       return [...quotes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -530,7 +595,10 @@ export default {
       return this.allQuotations.filter(q => q.status === 'pending').length
     },
     quotedCount() {
-      return this.allQuotations.filter(q => q.status === 'quoted').length
+      return this.allQuotations.filter(q => this.isQuotedLikeStatus(q.status)).length
+    },
+    isEditingQuoted() {
+      return this.isQuotedLikeStatus(this.selectedQuotation?.status)
     },
     acceptedCount() {
       return this.allQuotations.filter(q => q.status === 'accepted').length
@@ -541,7 +609,22 @@ export default {
     quotedPerPax() {
       const guests = Number(this.selectedQuotation?.numberOfGuests || 0)
       if (!guests) return 0
-      return Number(this.quoteForm.price || 0) / guests
+      return this.toMoney(Number(this.quoteForm.price || 0) / guests)
+    },
+    packagePricingBreakdown() {
+      return this.getPackagePricingBreakdown(this.selectedQuotation, this.baseQuoteAmount)
+    },
+    packageBaseSubtotal() {
+      // 1. If we have a valid breakdown (with your new Lump Sum math), use it first!
+      if (this.packagePricingBreakdown.hasPackagePricing) {
+        return this.packagePricingBreakdown.packageSubtotal
+      }
+
+      // 2. Otherwise, fall back to the baseQuoteAmount
+      return this.toMoney(Math.max(0, Number(this.baseQuoteAmount) || 0))
+    },
+    autoCalculatedTotal() {
+      return this.toMoney(this.packageBaseSubtotal + this.additionalItemsTotal)
     },
     quoteValidUntilDate() {
       const days = Math.max(1, Number(this.quoteForm.validUntilDays) || 1)
@@ -551,12 +634,163 @@ export default {
     },
     additionalItemsTotal() {
       if (!Array.isArray(this.quoteForm.additionalItems)) return 0
-      return this.quoteForm.additionalItems.reduce((sum, item) => {
-        return sum + (Number(item?.total) || 0)
+      const cents = this.quoteForm.additionalItems.reduce((sum, item) => {
+        return sum + this.toCents(item?.total)
       }, 0)
+      return this.fromCents(cents)
+    }
+  },
+  watch: {
+    additionalItemsTotal() {
+      this.applyAutoCalculatedTotal()
     }
   },
   methods: {
+    toCents(value) {
+      const numberValue = Number(value)
+      if (!Number.isFinite(numberValue)) return 0
+      return Math.round((numberValue + Number.EPSILON) * 100)
+    },
+    fromCents(cents) {
+      const centsValue = Number(cents)
+      if (!Number.isFinite(centsValue)) return 0
+      return centsValue / 100
+    },
+    toMoney(value) {
+      const num = Number(value);
+      if (isNaN(num)) return 0;
+      // Use Math.round to avoid floating point errors before returning a clean float
+      return Math.round((num + Number.EPSILON) * 100) / 100;
+    },
+    getPackagePricingBreakdown(quotation, fallbackSubtotal = 0) {
+      const packageData = quotation?.packageId || {}
+      const guestsCount = Math.max(0, Number(quotation?.numberOfGuests) || 0)
+
+      // 1. Detect if this is a Lump Sum package (flexible check)
+      const packageName = String(packageData.name || '').toLowerCase();
+      const isLumpSum = packageName.includes('lump sum') ||
+        packageName.includes('wedding premium') ||
+        packageName.includes('premium') ||
+        packageName.includes('wedding') ||
+        packageName.includes('Lump Sum') ||// <-- ADD YOUR PACKAGE NAME HERE
+        packageData.isLumpSumPackage === true;
+
+      const basePriceValue = Math.max(0, Number(packageData?.price) || 0)
+
+      // 2. Logic for Original Price: Don't multiply if it's a lump sum
+      const originalPackageSubtotalRaw = isLumpSum
+        ? basePriceValue
+        : (guestsCount > 0 ? basePriceValue * guestsCount : 0);
+
+      const discountedPerPax = Math.max(0, Number(packageData?.discountedPrice) || 0)
+      const discountMinPax = Number(packageData?.discountMinPax)
+      const hasDiscountThreshold = Number.isFinite(discountMinPax) && discountMinPax > 0
+
+      // 3. Logic for Discounted/Incremental Price
+      let discountedPackageSubtotalRaw = originalPackageSubtotalRaw;
+
+      if (isLumpSum) {
+        // Applying your custom incremental rule: RM 13,888 + (extra guests * discountedPrice)
+        if (guestsCount > discountMinPax && discountMinPax > 0) {
+          const extraGuests = guestsCount - discountMinPax;
+          discountedPackageSubtotalRaw = basePriceValue + (extraGuests * discountedPerPax);
+        }
+      } else {
+        // Standard Per Pax discount logic
+        const isDiscountEligible = Boolean(packageData?.discountEnabled)
+          && discountedPerPax > 0
+          && guestsCount > 0
+          && (!hasDiscountThreshold || guestsCount >= discountMinPax)
+
+        if (isDiscountEligible) {
+          discountedPackageSubtotalRaw = discountedPerPax * guestsCount;
+        }
+      }
+
+      const waiterFee = Math.max(0, Number(packageData?.waiterFee) || 0)
+      const waiterQuantity = Math.max(0, Number(packageData?.waiterQuantity) || 0)
+      const waiterQuantityUsed = waiterQuantity > 0 ? waiterQuantity : 1
+      const waiterServiceSubtotalRaw = Boolean(packageData?.waitersAvailable) && waiterFee > 0
+        ? waiterFee * waiterQuantityUsed
+        : 0
+
+      const venueFee = Math.max(0, Number(packageData?.venueFee) || 0)
+      const venueServiceSubtotalRaw = Boolean(packageData?.venueAvailable) && venueFee > 0
+        ? venueFee
+        : 0
+
+      const packageSubtotalRaw = discountedPackageSubtotalRaw + waiterServiceSubtotalRaw + venueServiceSubtotalRaw
+      const originalWithServicesSubtotalRaw = originalPackageSubtotalRaw + waiterServiceSubtotalRaw + venueServiceSubtotalRaw
+      const fallback = this.toMoney(Math.max(0, Number(fallbackSubtotal) || 0))
+
+      const hasPackagePricing = originalPackageSubtotalRaw > 0 || waiterServiceSubtotalRaw > 0 || venueServiceSubtotalRaw > 0
+
+      return {
+        hasPackagePricing,
+        guestsCount,
+        waiterQuantityUsed,
+        originalPackageSubtotal: hasPackagePricing ? this.toMoney(originalPackageSubtotalRaw) : fallback,
+        discountedPackageSubtotal: hasPackagePricing ? this.toMoney(discountedPackageSubtotalRaw) : fallback,
+        waiterServiceSubtotal: this.toMoney(waiterServiceSubtotalRaw),
+        venueServiceSubtotal: this.toMoney(venueServiceSubtotalRaw),
+        originalWithServicesSubtotal: hasPackagePricing ? this.toMoney(originalWithServicesSubtotalRaw) : fallback,
+        packageSubtotal: hasPackagePricing ? this.toMoney(packageSubtotalRaw) : fallback,
+        discountSavings: hasPackagePricing
+          ? this.toMoney(Math.max(0, originalPackageSubtotalRaw - discountedPackageSubtotalRaw))
+          : 0
+      }
+    },
+    handleAdditionalItemNameChange(item, selectedValue) {
+      if (!item) return
+      if (selectedValue === '__other__') {
+        item.__customName = true
+        item.name = ''
+        return
+      }
+      item.__customName = false
+      item.name = String(selectedValue || '').trim()
+    },
+    handleCustomItemNameBlur(item) {
+      if (!item) return
+      const value = String(item.name || '').trim()
+      if (!value) {
+        item.__customName = false
+      }
+      item.name = value
+    },
+    handleAdditionalItemCategoryChange(item, selectedValue) {
+      if (!item) return
+      if (selectedValue === '__other__') {
+        item.__customCategory = true
+        item.category = ''
+        return
+      }
+      item.__customCategory = false
+      item.category = String(selectedValue || '').trim()
+    },
+    handleCustomItemCategoryBlur(item) {
+      if (!item) return
+      const value = String(item.category || '').trim()
+      if (!value) {
+        item.__customCategory = false
+      }
+      item.category = value
+    },
+    markPriceAsManual() {
+      this.isPriceManuallyEdited = true
+    },
+    normalizeManualPrice() {
+      if (this.quoteForm.price === null || this.quoteForm.price === undefined || this.quoteForm.price === '') {
+        return
+      }
+      this.quoteForm.price = this.toMoney(this.quoteForm.price)
+    },
+    applyAutoCalculatedTotal(force = false) {
+      if (this.isPriceManuallyEdited && !force) {
+        return
+      }
+      this.quoteForm.price = this.autoCalculatedTotal
+    },
     createEmptyAdditionalItem() {
       return {
         name: '',
@@ -581,7 +815,7 @@ export default {
           name: String(row?.name || '').trim(),
           category: String(row?.category || '').trim(),
           quantity: Math.max(1, Number(row?.quantity) || 1),
-          total: Math.max(0, Number(row?.total) || 0)
+          total: this.toMoney(Math.max(0, Number(row?.total) || 0))
         }))
         .filter(row => row.name)
     },
@@ -596,7 +830,7 @@ export default {
       const items = this.getNormalizedAdditionalItems()
       if (!items.length) return 'No additional adjustments.'
       const lines = items.map((item, idx) => `${idx + 1}. ${item.name} (Category: ${item.category || '-'})  Qty: ${item.quantity}  Total: RM ${item.total.toFixed(2)}`)
-      lines.push(`Total Additional Items: RM ${items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}`)
+      lines.push(`Total Additional Items: RM ${this.toMoney(items.reduce((sum, item) => sum + item.total, 0)).toFixed(2)}`)
       return lines.join('\n')
     },
     formatDate(dateString) {
@@ -607,6 +841,17 @@ export default {
         day: 'numeric',
         year: 'numeric'
       })
+    },
+    isQuotedLikeStatus(status) {
+      return status === 'quoted' || status === 'quotedEdited'
+    },
+    canEditQuotedQuotation(quotation) {
+      return this.isQuotedLikeStatus(quotation?.status)
+    },
+    formatQuotationStatus(status) {
+      if (status === 'quotedEdited') return 'Quoted Edited'
+      if (!status) return '-'
+      return status
     },
     truncateText(text, length) {
       if (!text) return ''
@@ -715,7 +960,7 @@ export default {
           }
 
           body
-            .split(/,/) 
+            .split(/,/)
             .map(part => part.trim())
             .filter(Boolean)
             .forEach(item => addGroupItem(category, item))
@@ -803,15 +1048,43 @@ export default {
       return foods + drinks + cakes
     },
     getPackagePriceReference(quotation) {
-      const packagePrice = Number(quotation?.packageId?.price)
-      const guests = Number(quotation?.numberOfGuests || 0)
-      if (!packagePrice || !guests) return 'Not available'
-      return `RM ${(packagePrice * guests).toFixed(2)}`
+      const pkg = quotation?.packageId || {};
+      const packagePrice = Number(pkg.price || 0);
+      const guests = Number(quotation?.numberOfGuests || 0);
+
+      // Correctly define packageName using pkg
+      const packageName = String(pkg.name || '').toLowerCase();
+
+      const isLumpSum = packageName.includes('lump sum') ||
+        packageName.includes('wedding premium') ||
+        packageName.includes('premium') ||
+        packageName.includes('wedding') ||
+        pkg.isLumpSumPackage === true;
+
+      if (isLumpSum) {
+        return `RM ${packagePrice.toFixed(2)}`; // Just the base price
+      }
+      return `RM ${(packagePrice * guests).toFixed(2)}`; // Price * Guests for normal
     },
+
     getPerPaxReference(quotation) {
-      const packagePrice = Number(quotation?.packageId?.price)
-      if (!packagePrice) return 0
-      return packagePrice
+      const pkg = quotation?.packageId || {};
+      const packagePrice = Number(pkg.price || 0);
+      const guests = Number(quotation?.numberOfGuests || 0);
+
+      // Correctly define packageName using pkg
+      const packageName = String(pkg.name || '').toLowerCase();
+
+      const isLumpSum = packageName.includes('lump sum') ||
+        packageName.includes('wedding premium') ||
+        packageName.includes('premium') ||
+        packageName.includes('wedding') ||
+        pkg.isLumpSumPackage === true;
+
+      if (isLumpSum && guests > 0) {
+        return packagePrice / guests; // Show what the fixed price averages out to per person
+      }
+      return packagePrice;
     },
     getQuotedPerPax(quotation) {
       const quoted = Number(quotation?.quotedAmount || 0)
@@ -820,20 +1093,56 @@ export default {
       return quoted / guests
     },
     openQuoteModal(quotation) {
-      this.selectedQuotation = quotation
-      this.isQuoteEditor = true
-      // Pre-fill with estimated price
-      const basePerPax = Number(quotation?.packageId?.price || 25)
-      const estimatedPrice = quotation.numberOfGuests * basePerPax
-      this.quoteForm.price = estimatedPrice
-      this.quoteForm.validUntilDays = 7
-      this.quoteForm.additionalItems = [this.createEmptyAdditionalItem()]
-      this.quoteForm.message = `Dear ${quotation.customerName},\n\nThank you for your inquiry. We are pleased to offer our ${this.getPackageName(quotation)} package for your event.\n\nThis quote includes menu preparation, event service coordination, and cleanup support.\n\nPlease review and confirm before the validity date.`
-      this.quoteForm.notes = ''
+      this.selectedQuotation = quotation;
+      this.isQuoteEditor = true;
+
+      // STEP 1: Reset the manual edit flag immediately to prevent old logic from blocking
+      this.isPriceManuallyEdited = false;
+
+      const pkg = quotation?.packageId || {};
+      const basePrice = Number(pkg.price || 0);
+      const guests = Number(quotation.numberOfGuests || 0);
+
+      // Correctly define packageName using pkg
+      const packageName = String(pkg.name || '').toLowerCase();
+
+      const isLumpSum = packageName.includes('lump sum') ||
+        packageName.includes('wedding premium') ||
+        packageName.includes('premium') ||
+        packageName.includes('wedding') ||
+        pkg.isLumpSumPackage === true;
+
+      // STEP 2: Explicitly calculate the reference without multiplication for Lump Sum
+      const initialRefPrice = isLumpSum ? basePrice : (basePrice * guests);
+
+      // STEP 3: Pass 0 as fallback to ensure breakdown uses its internal math only
+      const packageBreakdown = this.getPackagePricingBreakdown(quotation, 0);
+
+      // STEP 4: Force the baseQuoteAmount to the correct subtotal
+      const freshSubtotal = packageBreakdown.packageSubtotal;
+      this.baseQuoteAmount = Number(quotation?.quotedAmount || 0) > 0
+        ? Number(quotation.quotedAmount)
+        : freshSubtotal;
+
+      // STEP 5: Set the form price to the NEW baseQuoteAmount
+      this.quoteForm.price = this.baseQuoteAmount;
+
+      // ... rest of your form initialization ...
+      this.quoteForm.validUntilDays = 7;
+      this.quoteForm.additionalItems = [this.createEmptyAdditionalItem()];
+
+      // Set the default message
+      this.quoteForm.message = this.isQuotedLikeStatus(quotation?.status)
+        ? (quotation?.adminNotes || `Dear ${quotation.customerName},\n\nPlease find our revised quotation for your review.`)
+        : `Dear ${quotation.customerName},\n\nThank you for your inquiry. We are pleased to offer our ${this.getPackageName(quotation)} package for your event.\n\nThis quote includes menu preparation, event service coordination, and cleanup support.\n\nPlease review and confirm before the validity date.`;
+
+      this.quoteForm.notes = '';
     },
     closeQuoteModal() {
       this.isQuoteEditor = false
       this.selectedQuotation = null
+      this.baseQuoteAmount = 0
+      this.isPriceManuallyEdited = false
       this.quoteForm = {
         price: null,
         message: '',
@@ -907,7 +1216,8 @@ export default {
       const additionalItems = this.getNormalizedAdditionalItems()
       const additionalTotal = additionalItems.reduce((sum, item) => sum + item.total, 0)
       const basePackageTotal = Math.max(0, quotedTotal - additionalTotal)
-      const basePerPax = guestsCount > 0 ? (basePackageTotal / guestsCount) : basePackageTotal
+      const packageBreakdown = this.getPackagePricingBreakdown(quotation, basePackageTotal)
+      const basePerPax = guestsCount > 0 ? (packageBreakdown.discountedPackageSubtotal / guestsCount) : packageBreakdown.discountedPackageSubtotal
 
       const formatCurrency = (value) => `RM ${Number(value || 0).toFixed(2)}`
 
@@ -1059,9 +1369,27 @@ export default {
           `Catering Package - ${this.getPackageName(quotation)}`,
           formatCurrency(basePerPax),
           guestsCount > 0 ? String(guestsCount) : '-',
-          formatCurrency(basePackageTotal)
+          formatCurrency(packageBreakdown.discountedPackageSubtotal)
         ]
       ]
+
+      if (packageBreakdown.waiterServiceSubtotal > 0) {
+        itemRows.push([
+          'Waiter Service',
+          formatCurrency(packageBreakdown.waiterServiceSubtotal / packageBreakdown.waiterQuantityUsed),
+          String(packageBreakdown.waiterQuantityUsed),
+          formatCurrency(packageBreakdown.waiterServiceSubtotal)
+        ])
+      }
+
+      if (packageBreakdown.venueServiceSubtotal > 0) {
+        itemRows.push([
+          'Venue Service',
+          formatCurrency(packageBreakdown.venueServiceSubtotal),
+          '1',
+          formatCurrency(packageBreakdown.venueServiceSubtotal)
+        ])
+      }
 
       additionalItems.forEach((item) => {
         const qty = Math.max(1, Number(item.quantity) || 1)
@@ -1096,10 +1424,13 @@ export default {
         theme: 'grid',
         margin: { left: margin + (contentWidth * 0.42), right: margin },
         body: [
-          ['Package Subtotal', formatCurrency(basePackageTotal)],
+          ['Original Package Price', formatCurrency(packageBreakdown.originalPackageSubtotal)],
+          ['Discounted Package Price', formatCurrency(packageBreakdown.discountedPackageSubtotal)],
+          ['Waiter Service', formatCurrency(packageBreakdown.waiterServiceSubtotal)],
+          ['Venue Service', formatCurrency(packageBreakdown.venueServiceSubtotal)],
+          ['Package Subtotal (After Discount)', formatCurrency(packageBreakdown.packageSubtotal)],
           ['Additional Items', formatCurrency(additionalTotal)],
           ['Total Quoted Amount', formatCurrency(quotedTotal)],
-          ['Quoted Price Per Pax', formatCurrency(this.quotedPerPax)],
           ['Valid Until', validUntilText]
         ],
         bodyStyles: { fontSize: 9.1, cellPadding: 2.4 },
@@ -1108,7 +1439,7 @@ export default {
           1: { cellWidth: contentWidth * 0.24, halign: 'right' }
         },
         didParseCell: (data) => {
-          if (data.row.index === 2) {
+          if (data.row.index === 6) {
             data.cell.styles.fontStyle = 'bold'
             data.cell.styles.fillColor = [239, 246, 255]
           }
@@ -1159,7 +1490,7 @@ export default {
       return doc.output('blob')
     },
     async sendQuotation() {
-      const normalizedPrice = Number(this.quoteForm.price)
+      const normalizedPrice = this.toMoney(this.quoteForm.price)
       if (!normalizedPrice || normalizedPrice <= 0) {
         alert('Please enter a valid quotation amount greater than RM 0.')
         return
@@ -1191,9 +1522,11 @@ export default {
         const generatedPdfName = this.buildQuotationPdfFileName(this.selectedQuotation)
         const uploadedPdf = await this.uploadQuotationPdfFile(pdfBlob, generatedPdfName)
 
+        const nextStatus = this.isEditingQuoted ? 'quotedEdited' : 'quoted'
+
         await this.quotationsStore.updateQuotationStatus(
           this.selectedQuotation._id || this.selectedQuotation.id,
-          'quoted',
+          nextStatus,
           finalMessage,
           normalizedPrice
         )
@@ -1206,7 +1539,7 @@ export default {
           }
         )
         // Store notes if separate API field exists, otherwise append or ignore
-        
+
         // No alert needed, UI update is enough usually, but let's keep it clean
         this.closeQuoteModal()
       } catch (error) {
@@ -1330,8 +1663,15 @@ export default {
   text-align: center;
 }
 
-.stat-pill.blue { background: #eff6ff; border: 1px solid #dbeafe; }
-.stat-pill.yellow { background: #fefce8; border: 1px solid #fef9c3; }
+.stat-pill.blue {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.stat-pill.yellow {
+  background: #fefce8;
+  border: 1px solid #fef9c3;
+}
 
 .stat-pill .label {
   font-size: 12px;
@@ -1347,7 +1687,9 @@ export default {
 }
 
 /* Filters */
-.dashboard-section { margin-bottom: 24px; }
+.dashboard-section {
+  margin-bottom: 24px;
+}
 
 .filters-bar {
   display: flex;
@@ -1383,7 +1725,7 @@ export default {
 }
 
 .badge-count {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   padding: 2px 8px;
   border-radius: 20px;
   font-size: 11px;
@@ -1399,13 +1741,18 @@ export default {
   background: white;
   border-radius: 16px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   overflow: hidden;
 }
 
-.table-responsive { overflow-x: auto; }
+.table-responsive {
+  overflow-x: auto;
+}
 
-table { width: 100%; border-collapse: collapse; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
 th {
   text-align: left;
@@ -1497,12 +1844,36 @@ td {
   font-size: 12px;
   font-weight: 600;
   text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
-.status-badge.pending { background: #fffbeb; color: #b45309; }
-.status-badge.quoted { background: #eff6ff; color: #1d4ed8; }
-.status-badge.accepted { background: #f0fdf4; color: #15803d; }
-.status-badge.rejected { background: #fef2f2; color: #b91c1c; }
+.status-badge.pending {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.status-badge.quoted {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-badge.quotedEdited {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.status-badge.accepted {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.status-badge.rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+}
 
 .quote-amount-cell {
   font-size: 13px;
@@ -1515,7 +1886,8 @@ td {
   font-weight: 500;
 }
 
-.btn-primary-action, .btn-submit {
+.btn-primary-action,
+.btn-submit {
   background: #0f172a;
   color: white;
   border: none;
@@ -1524,6 +1896,21 @@ td {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.btn-edit-quote {
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-edit-quote:hover {
+  background: #1e40af;
 }
 
 .btn-preview {
@@ -1541,7 +1928,8 @@ td {
   background: #1e40af;
 }
 
-.btn-view-details, .btn-close {
+.btn-view-details,
+.btn-close {
   background: white;
   border: 1px solid #e2e8f0;
   padding: 8px 16px;
@@ -1573,7 +1961,7 @@ td {
   background: white;
   border-radius: 16px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   overflow: hidden;
 }
 
@@ -1629,8 +2017,11 @@ td {
 /* Modal */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -1664,7 +2055,10 @@ td {
   margin-bottom: 4px;
 }
 
-.order-date { font-size: 13px; color: #64748b; }
+.order-date {
+  font-size: 13px;
+  color: #64748b;
+}
 
 .modal-close-btn {
   background: none;
@@ -1688,15 +2082,18 @@ td {
   margin-bottom: 24px;
 }
 
-.info-card, .form-card {
+.info-card,
+.form-card {
   background: white;
   padding: 24px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.info-card h4, .form-card h4, .notes-section h4 {
+.info-card h4,
+.form-card h4,
+.notes-section h4 {
   font-size: 14px;
   font-weight: 700;
   color: #94a3b8;
@@ -1712,10 +2109,21 @@ td {
   font-size: 14px;
 }
 
-.info-row .label { color: #64748b; }
-.info-row .value { color: #0f172a; font-weight: 500; text-align: right; }
+.info-row .label {
+  color: #64748b;
+}
 
-.divider { height: 1px; background: #f1f5f9; margin: 12px 0; }
+.info-row .value {
+  color: #0f172a;
+  font-weight: 500;
+  text-align: right;
+}
+
+.divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 12px 0;
+}
 
 .notes-box {
   background: #fefce8;
@@ -1811,6 +2219,31 @@ td {
   margin-bottom: 0;
 }
 
+.price-auto-helper {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.btn-use-auto {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-use-auto:hover {
+  background: #dbeafe;
+}
+
 .quote-preview-box {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
@@ -1831,7 +2264,9 @@ td {
 }
 
 /* Forms */
-.form-group { margin-bottom: 20px; }
+.form-group {
+  margin-bottom: 20px;
+}
 
 .form-group label {
   display: block;
@@ -1908,7 +2343,8 @@ td {
   color: #334155;
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #cbd5e1;
@@ -1918,7 +2354,8 @@ td {
   font-family: inherit;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus,
+.form-textarea:focus {
   outline: none;
   border-color: #0f172a;
   box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
@@ -1938,7 +2375,9 @@ td {
   font-weight: 500;
 }
 
-.input-wrapper input { padding-left: 40px; }
+.input-wrapper input {
+  padding-left: 40px;
+}
 
 .modal-footer {
   padding: 24px;
@@ -1963,8 +2402,17 @@ td {
   color: #0f172a;
 }
 
-.quote-date { font-size: 12px; color: #64748b; }
-.quote-message { font-size: 14px; color: #475569; line-height: 1.5; font-style: italic; }
+.quote-date {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.quote-message {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+  font-style: italic;
+}
 
 .notes-section {
   background: white;
@@ -1975,13 +2423,40 @@ td {
 }
 
 @media (max-width: 768px) {
-  .admin-content { margin-left: 0; width: 100%; padding: 16px; padding-bottom: 80px; }
-  .modal-grid { grid-template-columns: 1fr; }
-  .modal-card { width: 100%; height: 100%; border-radius: 0; }
-  .quote-editor-header { flex-direction: column; align-items: flex-start; }
-  .quote-editor-content { padding: 16px; }
-  .quote-editor-footer { padding: 16px; }
-  .additional-items-header-row { display: none; }
+  .admin-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 16px;
+    padding-bottom: 80px;
+  }
+
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .quote-editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .quote-editor-content {
+    padding: 16px;
+  }
+
+  .quote-editor-footer {
+    padding: 16px;
+  }
+
+  .additional-items-header-row {
+    display: none;
+  }
+
   .additional-item-row {
     grid-template-columns: 1fr;
     background: white;
@@ -1989,13 +2464,26 @@ td {
     border-radius: 8px;
     padding: 8px;
   }
+
   .additional-items-actions {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  th, td { padding: 12px 16px; }
-  .customer-info { flex-direction: column; align-items: flex-start; gap: 4px; }
-  .avatar-placeholder { display: none; }
+
+  th,
+  td {
+    padding: 12px 16px;
+  }
+
+  .customer-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .avatar-placeholder {
+    display: none;
+  }
 }
 </style>

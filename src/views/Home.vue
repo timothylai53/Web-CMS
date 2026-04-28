@@ -163,6 +163,9 @@
                 <button @click="openChat(provider)" class="btn-icon btn-chat-icon" title="Chat with Provider">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </button>
+                <button @click="openWhatsApp(provider)" class="btn-icon btn-whatsapp" title="Chat on WhatsApp">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.15 1.58 5.96L0 24l6.3-1.65a11.9 11.9 0 0 0 5.76 1.47h.01c6.56 0 11.9-5.34 11.9-11.9a11.8 11.8 0 0 0-3.45-8.44ZM12.07 21.8h-.01a9.9 9.9 0 0 1-5.03-1.37l-.36-.21-3.74.98 1-3.64-.24-.37a9.84 9.84 0 0 1-1.52-5.29c0-5.44 4.43-9.87 9.88-9.87a9.8 9.8 0 0 1 6.99 2.9 9.8 9.8 0 0 1 2.88 6.98c0 5.45-4.43 9.88-9.85 9.88Zm5.42-7.4c-.3-.15-1.75-.86-2.02-.95-.27-.1-.47-.15-.67.15-.2.3-.77.95-.95 1.15-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.68-2.08-.17-.3-.02-.47.13-.62.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.48-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.03-1.05 2.5 0 1.47 1.08 2.9 1.23 3.1.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.73.23 1.39.2 1.91.12.58-.09 1.75-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg>
+                </button>
                 <button @click="selectProvider(provider)" class="btn-primary-card">
                   <span>View Menu</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
@@ -444,6 +447,41 @@ export default {
           userRole: 'cateringProvider'
         } 
       })
+    },
+    normalizePhoneForWhatsApp(rawPhone) {
+      const raw = String(rawPhone || '').trim()
+      if (!raw) return ''
+
+      let number = raw.replace(/[^\d+]/g, '')
+
+      if (number.startsWith('+')) {
+        number = number.slice(1)
+      }
+
+      if (number.startsWith('00')) {
+        number = number.slice(2)
+      }
+
+      if (number.startsWith('0')) {
+        number = `60${number.slice(1)}`
+      }
+
+      return number.replace(/\D/g, '')
+    },
+    openWhatsApp(provider) {
+      const phone = this.normalizePhoneForWhatsApp(provider?.phone)
+
+      if (!phone) {
+        alert('This provider does not have a WhatsApp-ready phone number yet.')
+        return
+      }
+
+      const providerName = provider?.businessName || 'Provider'
+      const message = encodeURIComponent(
+        `Hi ${providerName}, I found your catering service on CaterFlow CMS and would like to ask about your packages.`
+      )
+      const url = `https://wa.me/${phone}?text=${message}`
+      window.open(url, '_blank', 'noopener,noreferrer')
     }
   }
 }
@@ -923,6 +961,18 @@ export default {
   background: #eff6ff;
   color: #3b82f6;
   border-color: #bfdbfe;
+}
+
+.btn-whatsapp {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.btn-whatsapp:hover {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
 }
 
 .btn-primary-card {

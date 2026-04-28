@@ -36,6 +36,10 @@ const packageSchema = new mongoose.Schema({
     min: 0,
     default: null
   },
+  isLumpSumPackage: {
+    type: Boolean,
+    default: false
+  },
   category: {
     type: String,
     enum: ['basic', 'standard', 'premium', 'deluxe'],

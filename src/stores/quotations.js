@@ -21,7 +21,7 @@ export const useQuotationsStore = defineStore('quotations', {
     },
 
     quotedQuotations: (state) => {
-      return state.quotations.filter(q => q.status === 'quoted')
+      return state.quotations.filter(q => q.status === 'quoted' || q.status === 'quotedEdited')
     }
   },
 
