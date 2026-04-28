@@ -125,14 +125,13 @@
               <div v-else-if="paymentMethod === 'fpx'" class="form-card details-card">
                 <h3>Select Your Bank</h3>
                 <div class="form-group">
-                  <label>Bank Selection *</label>
                   <select v-model="fpxBank" required class="full-select">
                     <option value="">-- Choose Bank --</option>
-                    <option value="maybank">Maybank</option>
+                    <option value="maybank2u">Maybank</option>
                     <option value="cimb">CIMB Bank</option>
-                    <option value="publicbank">Public Bank</option>
+                    <option value="public_bank">Public Bank</option>
                     <option value="rhb">RHB Bank</option>
-                    <option value="hongkong">Hong Leong Bank</option>
+                    <option value="hong_leong_bank">Hong Leong Bank</option>
                     <option value="ambank">AmBank</option>
                     <option value="bsn">Bank Simpanan Nasional</option>
                   </select>
@@ -265,7 +264,6 @@ import { useOrdersStore } from '@/stores/orders'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
 
-// 1. ADD NEW IMPORTS HERE
 import { loadStripe } from '@stripe/stripe-js'
 import axios from 'axios'
 
@@ -275,13 +273,12 @@ export default {
     return {
       paymentMethod: 'card',
       cardDetails: {
-        name: '', // We removed number, expiry, and cvv because Stripe handles them!
+        name: '',
       },
       fpxBank: '',
       ewalletProvider: '',
       orderData: {},
       isProcessing: false,
-      // 2. ADD NEW STRIPE VARIABLES
       stripe: null,
       cardElement: null
     }
@@ -289,7 +286,7 @@ export default {
   computed: {
     canPay() {
       if (this.paymentMethod === 'card') {
-        return this.cardDetails.name !== '' // Only needs to check if name is filled
+        return this.cardDetails.name !== ''
       } else if (this.paymentMethod === 'fpx') {
         return this.fpxBank !== ''
       } else if (this.paymentMethod === 'ewallet') {
@@ -299,7 +296,6 @@ export default {
     }
   },
   watch: {
-    // 3. REMOUNT STRIPE IF USER SWITCHES PAYMENT METHODS
     paymentMethod(newVal) {
       if (newVal === 'card') {
         this.$nextTick(() => {
@@ -311,59 +307,22 @@ export default {
     }
   },
   methods: {
-    // 4. UPDATED PAYMENT METHOD
     async processPayment() {
-      this.isProcessing = true
+      this.isProcessing = true;
 
       try {
-        const ordersStore = useOrdersStore()
-        const cartStore = useCartStore()
-        const authStore = useAuthStore()
+        const ordersStore = useOrdersStore();
+        const cartStore = useCartStore();
+        const authStore = useAuthStore();
 
-        if (!this.orderData.providerId) {
-          throw new Error('Provider ID is missing. Please try adding the package to cart again.')
-        }
+        if (!this.orderData.providerId) throw new Error('Provider ID missing.');
 
-        // --- NEW STRIPE PAYMENT LOGIC ---
-        if (this.paymentMethod === 'card') {
-          if (!this.cardDetails.name) throw new Error("Please enter the cardholder name.");
+        // Validation checks
+        if (this.paymentMethod === 'card' && !this.cardDetails.name) throw new Error("Please enter cardholder name.");
+        if (this.paymentMethod === 'fpx' && !this.fpxBank) throw new Error("Please select a bank.");
+        if (this.paymentMethod === 'ewallet' && !this.ewalletProvider) throw new Error("Please select an E-Wallet.");
 
-          // Request client secret from your Node.js backend
-          // NEW CODE
-          const amountInCents = Math.round(this.orderData.total * 100);
-
-          // Get the token from your auth store or local storage
-          const userToken = authStore.token || localStorage.getItem('token');
-
-          const response = await axios.post('http://localhost:5000/api/payment/create-payment-intent',
-            // 1. The data body
-            { amount: amountInCents },
-            // 2. The security headers!
-            {
-              headers: {
-                Authorization: `Bearer ${userToken}`
-              }
-            }
-          );
-
-          // Confirm the card payment securely using Stripe
-          const result = await this.stripe.confirmCardPayment(response.data.clientSecret, {
-            payment_method: {
-              card: this.cardElement,
-              billing_details: {
-                name: this.cardDetails.name,
-                email: this.orderData.email || authStore.user?.email
-              }
-            }
-          });
-
-          if (result.error) {
-            throw new Error(result.error.message); // Stops processing if card is declined
-          }
-        }
-        // --------------------------------
-
-        // Create order in database
+        // 1. Prepare the Order Payload for MongoDB
         const orderPayload = {
           packageId: this.orderData.packageId,
           providerId: this.orderData.providerId,
@@ -376,47 +335,93 @@ export default {
           location: this.orderData.eventLocation,
           customerName: this.orderData.fullName,
           customerPhone: this.orderData.phone,
-          customerEmail: this.orderData.email,
+          customerEmail: this.orderData.email || authStore.user?.email,
           selectedFoods: this.orderData.selectedFoods || [],
           selectedDrinks: this.orderData.selectedDrinks || [],
           selectedCakes: this.orderData.selectedCakes || [],
           specialRequests: this.orderData.notes || '',
-          paymentStatus: 'paid'
-        }
+          paymentStatus: 'pending' // Default to pending for now!
+        };
 
         if (this.orderData.quotationId) {
-          orderPayload.quotationId = this.orderData.quotationId
-          orderPayload.isQuotationOrder = true
+          orderPayload.quotationId = this.orderData.quotationId;
+          orderPayload.isQuotationOrder = true;
         }
 
-        const order = await ordersStore.createOrder(orderPayload)
+        // 2. Request client secret from your Node.js backend
+        const amountInCents = Math.round(this.orderData.total * 100);
+        const userToken = authStore.token || localStorage.getItem('token');
 
-        // Clear cart and storage
-        cartStore.clearCart()
-        sessionStorage.removeItem('quotationOrder')
+        const response = await axios.post('http://localhost:5000/api/payment/create-payment-intent',
+          { amount: amountInCents },
+          { headers: { Authorization: `Bearer ${userToken}` } }
+        );
 
-        this.isProcessing = false
+        // --- PATH 1: CARD PAYMENT (Instant) ---
+        if (this.paymentMethod === 'card') {
+          const result = await this.stripe.confirmCardPayment(response.data.clientSecret, {
+            payment_method: {
+              card: this.cardElement,
+              billing_details: { name: this.cardDetails.name, email: orderPayload.customerEmail }
+            }
+          });
 
-        // Redirect to success page
-        const orderId = order?._id || order?.id
-        if (orderId) {
-          this.$router.push({
-            name: 'PaymentSuccess',
-            params: { orderId: orderId }
-          })
-        } else {
-          alert('Order created successfully!')
-          this.$router.push('/orders')
+          if (result.error) throw new Error(result.error.message);
+
+          // Card success! Save order as Paid.
+          orderPayload.paymentStatus = 'paid';
+          const order = await ordersStore.createOrder(orderPayload);
+          cartStore.clearCart();
+          sessionStorage.removeItem('quotationOrder');
+
+          this.isProcessing = false;
+          this.$router.push({ name: 'PaymentSuccess', params: { orderId: order._id || order.id } });
         }
+
+        // --- PATH 2: FPX REDIRECT FLOW ---
+        else if (this.paymentMethod === 'fpx') {
+          // Save order to DB first as 'pending'
+          const order = await ordersStore.createOrder(orderPayload);
+          cartStore.clearCart();
+          sessionStorage.removeItem('quotationOrder');
+
+          // Construct the exact URL to send them back to after Maybank
+          const returnUrl = `${window.location.origin}/payment-success/${order._id || order.id}`;
+
+          // Tell Stripe to redirect them
+          const { error } = await this.stripe.confirmFpxPayment(response.data.clientSecret, {
+            payment_method: {
+              fpx: { bank: this.fpxBank }
+            },
+            return_url: returnUrl
+          });
+
+          if (error) throw new Error(error.message);
+        }
+
+        // --- PATH 3: GRABPAY REDIRECT FLOW ---
+        else if (this.paymentMethod === 'ewallet') {
+          const order = await ordersStore.createOrder(orderPayload);
+          cartStore.clearCart();
+          sessionStorage.removeItem('quotationOrder');
+
+          const returnUrl = `${window.location.origin}/payment-success/${order._id || order.id}`;
+
+          const { error } = await this.stripe.confirmGrabPayPayment(response.data.clientSecret, {
+            return_url: returnUrl
+          });
+
+          if (error) throw new Error(error.message);
+        }
+
       } catch (error) {
-        console.error('Payment error:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Payment failed. Please try again.'
-        alert(errorMessage)
-        this.isProcessing = false
+        console.error('Payment error:', error);
+        alert(error.message || 'Payment failed. Please try again.');
+        this.isProcessing = false;
       }
     }
   },
-  // 5. UPDATED MOUNTED HOOK
+
   async mounted() {
     const checkoutData = sessionStorage.getItem('checkoutData')
     if (checkoutData) {
@@ -426,12 +431,9 @@ export default {
       return;
     }
 
-    // Initialize Stripe using your Publishable Key
-    // IMPORTANT: PASTE YOUR pk_test_... KEY HERE
     this.stripe = await loadStripe('pk_test_51TQrGhB8ZaIWMBPR0ob61zDhxXT0PWc8JIMAKwJryEdjj9GDmYncICh1MOSY3iLfo1l3zfoQxFGLYyqZBPofULC000edU8MPfx');
     const elements = this.stripe.elements();
 
-    // Create the secure Card Element
     this.cardElement = elements.create('card', {
       style: {
         base: {
@@ -443,12 +445,10 @@ export default {
       },
     });
 
-    // Mount the Card Element to the DOM
     this.$nextTick(() => {
       if (this.paymentMethod === 'card') {
         this.cardElement.mount('#card-element');
 
-        // Show real-time validation errors (like "Your card number is incomplete.")
         this.cardElement.on('change', (event) => {
           const displayError = document.getElementById('card-errors');
           if (event.error) {

@@ -16,8 +16,10 @@ router.post('/create-payment-intent', authenticate, async (req, res) => {
 
     // Create the PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount, // Amount must be in cents (e.g., RM 10.00 = 1000)
+      amount: amount,
       currency: 'myr', 
+      // ADD THIS LINE BELOW:
+      payment_method_types: ['card', 'fpx', 'grabpay'],
       metadata: { integration_check: 'accept_a_payment' },
     });
 
