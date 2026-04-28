@@ -4,11 +4,14 @@ import { authenticate } from '../middleware/auth.js'; // Optional: Use your auth
 
 const router = express.Router();
 
-// Initialize Stripe with your secret key from .env
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Notice that the const stripe = new Stripe(...) line is GONE from here!
 
 router.post('/create-payment-intent', authenticate, async (req, res) => {
   try {
+    // 1. We moved the Stripe initialization INSIDE the route. 
+    // Now it waits for the server to fully start before looking for the key!
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
     const { amount } = req.body; 
 
     // Create the PaymentIntent
