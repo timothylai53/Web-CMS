@@ -16,6 +16,7 @@ import adminRoutes from './routes/admin.js';
 import providerRoutes from './routes/provider.js';
 import inventoryRoutes from './routes/inventory.js';
 import chatRoutes from './routes/chat.js';
+import paymentRoutes from './routes/payment.js';
 
 
 // Get __dirname equivalent in ES modules
@@ -49,6 +50,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/provider', providerRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

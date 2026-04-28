@@ -1,7 +1,7 @@
 <template>
   <div class="payment-page">
     <Navbar />
-    
+
     <div class="payment-container">
       <!-- Hero Section -->
       <div class="hero-section">
@@ -14,57 +14,83 @@
 
       <div class="payment-content">
         <div class="payment-grid">
-          
+
           <!-- Left: Payment Form -->
           <div class="payment-form">
-            
+
             <!-- Payment Method Selection -->
             <div class="form-card">
               <h3>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
                 Select Payment Method
               </h3>
-              
+
               <div class="payment-methods">
                 <label class="payment-method" :class="{ selected: paymentMethod === 'card' }">
                   <input type="radio" v-model="paymentMethod" value="card" />
                   <div class="method-icon-wrapper">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
                   </div>
                   <div class="method-info">
                     <span class="method-title">Credit/Debit Card</span>
                     <span class="method-desc">Pay securely with Visa or Mastercard</span>
                   </div>
                   <div class="check-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                   </div>
                 </label>
 
                 <label class="payment-method" :class="{ selected: paymentMethod === 'fpx' }">
                   <input type="radio" v-model="paymentMethod" value="fpx" />
                   <div class="method-icon-wrapper">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                      <polyline points="2 17 12 22 22 17"></polyline>
+                      <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
                   </div>
                   <div class="method-info">
                     <span class="method-title">Online Banking (FPX)</span>
                     <span class="method-desc">Maybank2u, CIMB Clicks, etc.</span>
                   </div>
                   <div class="check-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                   </div>
                 </label>
 
                 <label class="payment-method" :class="{ selected: paymentMethod === 'ewallet' }">
                   <input type="radio" v-model="paymentMethod" value="ewallet" />
                   <div class="method-icon-wrapper">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                      <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                    </svg>
                   </div>
                   <div class="method-info">
                     <span class="method-title">E-Wallet</span>
                     <span class="method-desc">Touch 'n Go, GrabPay, Boost</span>
                   </div>
                   <div class="check-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                   </div>
                 </label>
               </div>
@@ -74,59 +100,24 @@
             <transition name="fade" mode="out-in">
               <div v-if="paymentMethod === 'card'" class="form-card details-card">
                 <h3>Card Details</h3>
-                <div class="form-group">
-                  <label>Card Number *</label>
-                  <div class="input-with-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                    <input 
-                      type="text" 
-                      v-model="cardDetails.number" 
-                      placeholder="0000 0000 0000 0000"
-                      maxlength="19"
-                      @input="formatCardNumber"
-                      required 
-                    />
-                  </div>
-                </div>
-                
+
                 <div class="form-group">
                   <label>Cardholder Name *</label>
                   <div class="input-with-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <input 
-                      type="text" 
-                      v-model="cardDetails.name" 
-                      placeholder="Name on card"
-                      required 
-                    />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <input type="text" v-model="cardDetails.name" placeholder="Name on card" required />
                   </div>
                 </div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Expiry Date *</label>
-                    <input 
-                      type="text" 
-                      v-model="cardDetails.expiry" 
-                      placeholder="MM/YY"
-                      maxlength="5"
-                      @input="formatExpiry"
-                      required 
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label>CVV *</label>
-                    <div class="input-with-icon">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                      <input 
-                        type="text" 
-                        v-model="cardDetails.cvv" 
-                        placeholder="123"
-                        maxlength="4"
-                        required 
-                      />
-                    </div>
-                  </div>
+
+                <div class="form-group">
+                  <label>Credit / Debit Card *</label>
+                  <div id="card-element" class="form-input"
+                    style="padding: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px;"></div>
+                  <div id="card-errors" role="alert" style="color: #ef4444; font-size: 13px; margin-top: 8px;"></div>
                 </div>
               </div>
 
@@ -147,7 +138,12 @@
                   </select>
                 </div>
                 <div class="info-alert">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
                   <p>You will be redirected to your bank's secure login page to complete the transaction.</p>
                 </div>
               </div>
@@ -166,14 +162,24 @@
                   </select>
                 </div>
                 <div class="info-alert">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                  </svg>
                   <p>Open your e-wallet app to scan the QR code on the next screen.</p>
                 </div>
               </div>
             </transition>
 
             <div class="security-note">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
               <span>Your payment information is encrypted and secure.</span>
             </div>
           </div>
@@ -182,7 +188,7 @@
           <div class="summary-wrapper">
             <div class="summary-card">
               <h3>Order Summary</h3>
-              
+
               <div class="pricing-breakdown">
                 <div class="price-row">
                   <span>Subtotal</span>
@@ -206,27 +212,43 @@
               <div class="event-details-preview">
                 <h4>Event Details</h4>
                 <div class="preview-row">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
                   <span>{{ orderData.eventDate }} at {{ orderData.eventTime }}</span>
                 </div>
                 <div class="preview-row">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
                   <span class="truncate">{{ orderData.eventLocation }}</span>
                 </div>
                 <div class="preview-row">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
                   <span>{{ orderData.numberOfGuests }} Guests</span>
                 </div>
               </div>
 
-              <button 
-                @click="processPayment" 
-                class="btn-submit"
-                :disabled="!canPay || isProcessing"
-              >
+              <button @click="processPayment" class="btn-submit" :disabled="!canPay || isProcessing">
                 <span v-if="!isProcessing">Pay RM {{ orderData.total?.toFixed(2) }}</span>
                 <span v-else>Processing...</span>
-                <svg v-if="!isProcessing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                <svg v-if="!isProcessing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
               </button>
             </div>
           </div>
@@ -243,30 +265,31 @@ import { useOrdersStore } from '@/stores/orders'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
 
+// 1. ADD NEW IMPORTS HERE
+import { loadStripe } from '@stripe/stripe-js'
+import axios from 'axios'
+
 export default {
   components: { Navbar },
   data() {
     return {
       paymentMethod: 'card',
       cardDetails: {
-        number: '',
-        name: '',
-        expiry: '',
-        cvv: ''
+        name: '', // We removed number, expiry, and cvv because Stripe handles them!
       },
       fpxBank: '',
       ewalletProvider: '',
       orderData: {},
-      isProcessing: false
+      isProcessing: false,
+      // 2. ADD NEW STRIPE VARIABLES
+      stripe: null,
+      cardElement: null
     }
   },
   computed: {
     canPay() {
       if (this.paymentMethod === 'card') {
-        return this.cardDetails.number && 
-               this.cardDetails.name && 
-               this.cardDetails.expiry && 
-               this.cardDetails.cvv
+        return this.cardDetails.name !== '' // Only needs to check if name is filled
       } else if (this.paymentMethod === 'fpx') {
         return this.fpxBank !== ''
       } else if (this.paymentMethod === 'ewallet') {
@@ -275,19 +298,20 @@ export default {
       return false
     }
   },
-  methods: {
-    formatCardNumber(e) {
-      let value = e.target.value.replace(/\s/g, '')
-      let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value
-      this.cardDetails.number = formattedValue
-    },
-    formatExpiry(e) {
-      let value = e.target.value.replace(/\D/g, '')
-      if (value.length >= 2) {
-        value = value.substring(0, 2) + '/' + value.substring(2, 4)
+  watch: {
+    // 3. REMOUNT STRIPE IF USER SWITCHES PAYMENT METHODS
+    paymentMethod(newVal) {
+      if (newVal === 'card') {
+        this.$nextTick(() => {
+          if (this.cardElement) {
+            this.cardElement.mount('#card-element');
+          }
+        });
       }
-      this.cardDetails.expiry = value
-    },
+    }
+  },
+  methods: {
+    // 4. UPDATED PAYMENT METHOD
     async processPayment() {
       this.isProcessing = true
 
@@ -299,6 +323,33 @@ export default {
         if (!this.orderData.providerId) {
           throw new Error('Provider ID is missing. Please try adding the package to cart again.')
         }
+
+        // --- NEW STRIPE PAYMENT LOGIC ---
+        if (this.paymentMethod === 'card') {
+          if (!this.cardDetails.name) throw new Error("Please enter the cardholder name.");
+
+          // Request client secret from your Node.js backend
+          const amountInCents = Math.round(this.orderData.total * 100); 
+          const response = await axios.post('http://localhost:5000/api/payment/create-payment-intent', {
+            amount: amountInCents 
+          });
+
+          // Confirm the card payment securely using Stripe
+          const result = await this.stripe.confirmCardPayment(response.data.clientSecret, {
+            payment_method: {
+              card: this.cardElement,
+              billing_details: {
+                name: this.cardDetails.name,
+                email: this.orderData.email || authStore.user?.email
+              }
+            }
+          });
+
+          if (result.error) {
+            throw new Error(result.error.message); // Stops processing if card is declined
+          }
+        }
+        // --------------------------------
 
         // Create order in database
         const orderPayload = {
@@ -321,7 +372,6 @@ export default {
           paymentStatus: 'paid'
         }
 
-        // Add quotation reference if this is a quotation order
         if (this.orderData.quotationId) {
           orderPayload.quotationId = this.orderData.quotationId
           orderPayload.isQuotationOrder = true
@@ -329,15 +379,13 @@ export default {
         
         const order = await ordersStore.createOrder(orderPayload)
 
-        // Clear cart
+        // Clear cart and storage
         cartStore.clearCart()
-        
-        // Clear quotation session data if exists
         sessionStorage.removeItem('quotationOrder')
         
         this.isProcessing = false
 
-        // Redirect to success page with order ID
+        // Redirect to success page
         const orderId = order?._id || order?.id
         if (orderId) {
           this.$router.push({
@@ -345,7 +393,6 @@ export default {
             params: { orderId: orderId }
           })
         } else {
-          // Fallback: redirect to orders page
           alert('Order created successfully!')
           this.$router.push('/orders')
         }
@@ -357,13 +404,49 @@ export default {
       }
     }
   },
-  mounted() {
+  // 5. UPDATED MOUNTED HOOK
+  async mounted() {
     const checkoutData = sessionStorage.getItem('checkoutData')
     if (checkoutData) {
       this.orderData = JSON.parse(checkoutData)
     } else {
       this.$router.push('/menu')
+      return;
     }
+
+    // Initialize Stripe using your Publishable Key
+    // IMPORTANT: PASTE YOUR pk_test_... KEY HERE
+    this.stripe = await loadStripe('pk_test_51TQrGhB8ZaIWMBPR0ob61zDhxXT0PWc8JIMAKwJryEdjj9GDmYncICh1MOSY3iLfo1l3zfoQxFGLYyqZBPofULC000edU8MPfx'); 
+    const elements = this.stripe.elements();
+
+    // Create the secure Card Element
+    this.cardElement = elements.create('card', {
+      style: {
+        base: {
+          fontSize: '15px',
+          color: '#0f172a',
+          fontFamily: 'Inter, sans-serif',
+          '::placeholder': { color: '#94a3b8' },
+        },
+      },
+    });
+
+    // Mount the Card Element to the DOM
+    this.$nextTick(() => {
+      if (this.paymentMethod === 'card') {
+        this.cardElement.mount('#card-element');
+        
+        // Show real-time validation errors (like "Your card number is incomplete.")
+        this.cardElement.on('change', (event) => {
+          const displayError = document.getElementById('card-errors');
+          if (event.error) {
+            displayError.textContent = event.error.message;
+          } else {
+            displayError.textContent = '';
+          }
+        });
+      }
+    });
   }
 }
 </script>
@@ -754,10 +837,10 @@ export default {
   .payment-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .summary-card {
     position: static;
-    order: -1; 
+    order: -1;
     margin-bottom: 30px;
   }
 }
@@ -767,7 +850,7 @@ export default {
   .payment-container {
     margin-left: 70px;
   }
-  
+
   .payment-content {
     padding: 20px;
   }
@@ -782,4 +865,3 @@ export default {
   }
 }
 </style>
-
