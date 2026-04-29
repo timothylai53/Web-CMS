@@ -386,7 +386,8 @@ export default {
           sessionStorage.removeItem('quotationOrder');
 
           // Construct the exact URL to send them back to after Maybank
-          const returnUrl = `${window.location.origin}/payment-success/${order._id || order.id}`;
+          const routeInfo = this.$router.resolve({ name: 'PaymentSuccess', params: { orderId: order._id || order.id } });
+          const returnUrl = `${window.location.origin}${routeInfo.href}`;
 
           // Tell Stripe to redirect them
           const { error } = await this.stripe.confirmFpxPayment(response.data.clientSecret, {
