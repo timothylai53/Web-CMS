@@ -96,6 +96,28 @@
               </div>
             </div>
 
+            <label class="payment-method" :class="{ selected: paymentMethod === 'qr' }">
+                  <input type="radio" v-model="paymentMethod" value="qr" />
+                  <div class="method-icon-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <rect x="7" y="7" width="3" height="3"></rect>
+                      <rect x="14" y="7" width="3" height="3"></rect>
+                      <rect x="7" y="14" width="3" height="3"></rect>
+                      <rect x="14" y="14" width="3" height="3"></rect>
+                    </svg>
+                  </div>
+                  <div class="method-info">
+                    <span class="method-title">Direct Bank Transfer / QR</span>
+                    <span class="method-desc">Scan provider's QR or transfer manually</span>
+                  </div>
+                  <div class="check-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                </label>
+
             <!-- Card Details Form -->
             <transition name="fade" mode="out-in">
               <div v-if="paymentMethod === 'card'" class="form-card details-card">
@@ -171,7 +193,56 @@
                   <p>Open your e-wallet app to scan the QR code on the next screen.</p>
                 </div>
               </div>
+
+
+              <!-- QR Payment Form -->
+              <div v-else-if="paymentMethod === 'qr'" class="form-card details-card">
+                <h3>Scan QR or Transfer</h3>
+
+                <div v-if="isLoadingProvider" style="text-align: center; padding: 20px; color: #64748b;">
+                  Loading provider bank details...
+                </div>
+
+                <div v-else-if="providerDetails" class="qr-transfer-container">
+                  <div class="qr-display" v-if="providerDetails.bankQr && !isBankQrPdf">
+                    <img :src="providerDetails.bankQr" alt="Provider Bank QR Code" />
+                  </div>
+                  <div class="qr-display" v-else-if="providerDetails.bankQr && isBankQrPdf">
+                    <a :href="providerDetails.bankQr" target="_blank" rel="noopener">
+                      Open QR PDF
+                    </a>
+                  </div>
+                  <div v-else class="no-qr-msg">
+                    This provider has not uploaded a QR code. Please use the bank details below.
+                  </div>
+
+                  <div class="bank-details-box">
+                    <div class="detail-row">
+                      <span>Bank Name:</span>
+                      <strong>{{ providerDetails.bankName || 'N/A' }}</strong>
+                    </div>
+                    <div class="detail-row">
+                      <span>Account Name:</span>
+                      <strong>{{ providerDetails.accountHolderName || 'N/A' }}</strong>
+                    </div>
+                    <div class="detail-row">
+                      <span>Account No:</span>
+                      <strong>{{ providerDetails.bankAccount || 'N/A' }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="info-alert" style="margin-top: 20px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <p>Please transfer exactly <strong>RM {{ orderData.total?.toFixed(2) }}</strong>. Click 'Pay' below to confirm you have transferred the funds. The provider will manually verify your payment.</p>
+                  </div>
+                </div>
+              </div>
             </transition>
+            
 
             <div class="security-note">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -182,6 +253,8 @@
               <span>Your payment information is encrypted and secure.</span>
             </div>
           </div>
+
+          
 
           <!-- Right: Order Summary -->
           <div class="summary-wrapper">
@@ -263,6 +336,7 @@ import { useCartStore } from '@/stores/cart'
 import { useOrdersStore } from '@/stores/orders'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
+import api from '@/services/api'
 
 import { loadStripe } from '@stripe/stripe-js'
 import axios from 'axios'
@@ -280,7 +354,9 @@ export default {
       orderData: {},
       isProcessing: false,
       stripe: null,
-      cardElement: null
+      cardElement: null,
+      providerDetails: null,
+      isLoadingProvider: false
     }
   },
   computed: {
@@ -291,8 +367,11 @@ export default {
         return this.fpxBank !== ''
       } else if (this.paymentMethod === 'ewallet') {
         return this.ewalletProvider !== ''
-      }
+      } if (this.paymentMethod === 'qr') return true
       return false
+    },
+    isBankQrPdf() {
+      return Boolean(this.providerDetails?.bankQr?.startsWith('data:application/pdf'))
     }
   },
   watch: {
@@ -307,6 +386,25 @@ export default {
     }
   },
   methods: {
+
+    async fetchProviderDetails() {
+      this.isLoadingProvider = true;
+      try {
+        const providerId = this.orderData?.providerId?._id || this.orderData?.providerId
+        if (!providerId) {
+          this.providerDetails = null
+          return
+        }
+
+        const response = await api.get(`/provider/public/${providerId}`)
+        this.providerDetails = response.data.profile || response.data
+      } catch (error) {
+        console.error("Failed to load provider bank details", error);
+      } finally {
+        this.isLoadingProvider = false;
+      }
+    },
+
     async processPayment() {
       this.isProcessing = true;
 
@@ -415,6 +513,21 @@ export default {
           if (error) throw new Error(error.message);
         }
 
+        // --- PATH 4: MANUAL QR PAYMENT (NEW) ---
+        if (this.paymentMethod === 'qr') {
+          orderPayload.paymentStatus = 'pending_verification'; // Mark as pending manual check
+          orderPayload.paymentMethod = 'manual_transfer';
+          
+          // Save order directly to DB without calling Stripe
+          const order = await ordersStore.createOrder(orderPayload);
+          cartStore.clearCart();
+          sessionStorage.removeItem('quotationOrder');
+
+          this.isProcessing = false;
+          this.$router.push({ name: 'PaymentSuccess', params: { orderId: order._id || order.id } });
+          return; // Exit function so it doesn't run Stripe code below
+        }
+
       } catch (error) {
         console.error('Payment error:', error);
         alert(error.message || 'Payment failed. Please try again.');
@@ -427,6 +540,7 @@ export default {
     const checkoutData = sessionStorage.getItem('checkoutData')
     if (checkoutData) {
       this.orderData = JSON.parse(checkoutData)
+      this.fetchProviderDetails()
     } else {
       this.$router.push('/menu')
       return;
@@ -876,5 +990,67 @@ export default {
     grid-template-columns: 1fr;
     gap: 0;
   }
+
+  /* Manual QR & Bank Transfer Styles */
+.qr-transfer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.qr-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+}
+
+.qr-display img {
+  max-width: 250px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.no-qr-msg {
+  background: #fffbeb;
+  color: #b45309;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  border: 1px solid #fde68a;
+}
+
+.bank-details-box {
+  background: #f1f5f9;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detail-row span {
+  color: #64748b;
+}
+
+.detail-row strong {
+  color: #0f172a;
+}
 }
 </style>

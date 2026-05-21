@@ -496,7 +496,7 @@
             </div>
       </div>
 
-       <!-- Financial Tab -->
+      <!-- Financial Tab -->
       <div v-if="activeTab === 'financial'" class="content-section">
         <div class="section-header">
            <h2>Financial Settings</h2>
@@ -552,7 +552,35 @@
               class="form-input"
             />
           </div>
+
+          <!-- NEW: Bank QR Upload Section -->
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label">
+              Bank QR Code 
+            </label>
+            <div class="file-upload-wrapper" style="border: 1px dashed #ccc; padding: 20px; border-radius: 8px; text-align: center;">
+              <input 
+                type="file" 
+                id="qrUpload"
+                class="form-file-input"
+                accept="image/*, application/pdf"
+                @change="handleQrUpload"
+                style="display: none;"
+              />
+              <label for="qrUpload" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span v-if="!profileData.bankQrFileName">Click to upload QR Image or PDF</span>
+                <span v-else><strong>Selected:</strong> {{ profileData.bankQrFileName }}</span>
+              </label>
+            </div>
+            <small class="form-hint" style="color: #666; display: block; margin-top: 8px;">Accepted formats: JPG, PNG, PDF (Max size: 5MB)</small>
+          </div>
         </div>
+
 
         <div class="divider"></div>
 
@@ -578,7 +606,7 @@
             <button @click="saveFinancial" class="btn-primary">Save Financial Settings</button>
           </div>
       </div>
-
+      
       <!-- Security Tab -->
       <div v-if="activeTab === 'security'" class="content-section">
          <div class="section-header">
@@ -673,6 +701,8 @@ export default {
         bankAccount: '',
         bankName: '',
         accountHolderName: '',
+        bankQr: null,          // <-- ADD THIS: To store the base64 file data
+        bankQrFileName: '',    // <-- ADD THIS: To display the file name in the UI
         notifications: {
           email: true,
           sms: false,
@@ -687,7 +717,8 @@ export default {
       },
       pendingChanges: {
         businessName: false,
-        bankAccount: false
+        bankAccount: false,
+        bankQr: false
       },
       securityData: {
         currentPassword: '',
@@ -795,6 +826,33 @@ export default {
       this.profileData.gallery.splice(index, 1)
     },
 
+    // Image Uploads
+    // ... existing upload methods ...
+
+    // NEW: Handle QR Code Upload
+    handleQrUpload(e) {
+      const file = e.target.files[0]
+      if (file) {
+        // 5MB size limit check
+        if (file.size > 5 * 1024 * 1024) {
+          this.saveError = 'QR Code file must be less than 5MB'
+          setTimeout(() => this.saveError = '', 3000)
+          return
+        }
+        
+        // Save the file name to display in the UI
+        this.profileData.bankQrFileName = file.name
+        
+        // Convert to base64 string
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          this.profileData.bankQr = e.target.result
+          // REMOVED: this.markForApproval('bankQr')
+        }
+        reader.readAsDataURL(file)
+      }
+    },
+
     // Document Management
     selectDocument(docType) {
       const refMap = {
@@ -889,6 +947,8 @@ export default {
           bankAccount: this.profileData.bankAccount,
           bankName: this.profileData.bankName,
           accountHolderName: this.profileData.accountHolderName,
+          bankQr: this.profileData.bankQr,
+          bankQrFileName: this.profileData.bankQrFileName,
           notifications: this.profileData.notifications,
           pendingChanges: this.pendingChanges
         }, this.getAuthHeaders())

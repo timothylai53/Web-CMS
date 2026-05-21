@@ -34,4 +34,22 @@ router.post('/create-payment-intent', authenticate, async (req, res) => {
   }
 });
 
+// NEW: Public route to get a provider's details (for customer checkout)
+router.get('/:id', async (req, res) => {
+  try {
+    const provider = await User.findById(req.params.id).select('-password');
+    
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+
+    // Wrap it in a 'profile' object so it matches your Vue frontend expectations
+    res.json({ profile: provider }); 
+    
+  } catch (error) {
+    console.error('Error fetching provider:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router;

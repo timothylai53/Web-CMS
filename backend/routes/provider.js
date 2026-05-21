@@ -18,6 +18,32 @@ import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
+// Public provider bank details (for payment page)
+router.get('/public/:providerId', async (req, res) => {
+  try {
+    const provider = await User.findById(req.params.providerId)
+      .select('businessName bankAccount bankName accountHolderName bankQr bankQrFileName');
+
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+
+    res.json({
+      profile: {
+        businessName: provider.businessName || '',
+        bankAccount: provider.bankAccount || '',
+        bankName: provider.bankName || '',
+        accountHolderName: provider.accountHolderName || '',
+        bankQr: provider.bankQr || null,
+        bankQrFileName: provider.bankQrFileName || ''
+      }
+    });
+  } catch (error) {
+    console.error('Error loading provider bank details:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get provider profile
 router.get('/profile', authenticate, isCateringProvider, async (req, res) => {
   try {
@@ -61,6 +87,8 @@ router.get('/profile', authenticate, isCateringProvider, async (req, res) => {
         bankAccount: provider.bankAccount || '',
         bankName: provider.bankName || '',
         accountHolderName: provider.accountHolderName || '',
+        bankQr: provider.bankQr || null,                // <-- ADDED THIS
+        bankQrFileName: provider.bankQrFileName || '',  // <-- ADDED THIS
         notifications: provider.notifications || {
           email: true,
           sms: false,
@@ -166,13 +194,15 @@ router.put('/profile/operations', authenticate, isCateringProvider, async (req, 
 router.put('/profile/financial', authenticate, isCateringProvider, async (req, res) => {
   try {
     const { 
-      bankAccount, bankName, accountHolderName, 
+      bankAccount, bankName, accountHolderName, bankQr, bankQrFileName,
       notifications, pendingChanges 
     } = req.body;
 
     const updateData = {
       bankName,
       accountHolderName,
+      bankQr,
+      bankQrFileName,
       notifications
     };
 

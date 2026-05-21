@@ -138,6 +138,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  bankQr: {
+    type: String,
+    default: null
+  },
+  bankQrFileName: {
+    type: String,
+    default: ''
+  },
   notifications: {
     type: Object,
     default: {
