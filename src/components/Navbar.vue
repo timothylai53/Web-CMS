@@ -32,8 +32,7 @@
                 <span v-if="cartCount > 0" class="cart-pulse"></span>
               </div>
               <span class="nav-text">Cart</span>
-              <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
-            </router-link>
+              </router-link>
           </li>
           
           <li class="nav-category">Manage</li>

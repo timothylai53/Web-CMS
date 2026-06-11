@@ -73,7 +73,7 @@
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-                <span>Minimum {{ pkg.minPax || pkg.maxPax || 1 }} Guests</span>
+                <span>{{ isLumpSumPackage(pkg) ? 'Covers up to' : 'Minimum' }} {{ pkg.minPax || pkg.maxPax || 1 }} Guests</span>
               </div>
 
               <div class="select-btn-placeholder">
@@ -98,8 +98,8 @@
             <p>
               RM {{ (isSelectedLumpSum ? activePriceTotal : activePricePerPax).toFixed(2) }}
               <template v-if="!isSelectedLumpSum"> per pax</template>
-              • Minimum {{ selectedPackage.minPax || selectedPackage.maxPax || 1 }} guests
-              <span v-if="isDiscountApplied">(bulk discount applied)</span>
+              • {{ isSelectedLumpSum ? 'Covers up to' : 'Minimum' }} {{ selectedPackage.minPax || selectedPackage.maxPax || 1 }} guests
+              <span v-if="isDiscountApplied && !isSelectedLumpSum">(bulk discount applied)</span>
             </p>
             <p v-if="selectedPackage.discountEnabled && Number(selectedPackage.discountMinPax) > 0 && Number(selectedPackage.discountedPrice) >= 0"
               class="discount-note">
@@ -108,8 +108,7 @@
                 Each additional guest: +RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }}
               </template>
               <template v-else>
-                Bulk discount: {{ Number(selectedPackage.discountMinPax) }}+ pax → RM {{
-                  Number(selectedPackage.discountedPrice).toFixed(2) }}/pax
+                Tiered Discount: First {{ Number(selectedPackage.discountMinPax) - 1 }} pax at normal rate. Excess guests → RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }}/pax
               </template>
             </p>
             <p v-if="selectedPackage.waitersAvailable" class="waiter-summary-text">Optional waiter service available ({{
@@ -211,15 +210,38 @@
             <strong>RM {{ totalWithWaiter.toFixed(2) }}</strong>
           </div>
 
-          <p v-if="isDiscountApplied" class="discount-note">
-            <template v-if="isSelectedLumpSum">
-              {{ selectedPackage.minPax }} guests included. Each additional guest: +RM {{
-                Number(selectedPackage.discountedPrice).toFixed(2) }}
+          <div class="price-breakdown-box" v-if="selectedPackage">
+            <template v-if="isSelectedLumpSum && numberOfPax > selectedPackage.minPax">
+              <div class="breakdown-row">
+                <span>Base Package ({{ selectedPackage.minPax }} pax)</span>
+                <span>RM {{ Number(selectedPackage.price).toFixed(2) }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span>Extra Guests ({{ numberOfPax - selectedPackage.minPax }} pax × RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }})</span>
+                <span>+ RM {{ ((numberOfPax - selectedPackage.minPax) * Number(selectedPackage.discountedPrice)).toFixed(2) }}</span>
+              </div>
             </template>
+
+            <template v-else-if="!isSelectedLumpSum && selectedPackage.discountEnabled && numberOfPax >= selectedPackage.discountMinPax">
+              <div class="breakdown-row">
+                <span>First {{ selectedPackage.discountMinPax - 1 }} pax (× RM {{ Number(selectedPackage.price).toFixed(2) }})</span>
+                <span>RM {{ ((selectedPackage.discountMinPax - 1) * Number(selectedPackage.price)).toFixed(2) }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span class="highlight-discount">Excess Guests ({{ numberOfPax - (selectedPackage.discountMinPax - 1) }} pax × RM {{ Number(selectedPackage.discountedPrice).toFixed(2) }})</span>
+                <span class="highlight-discount">+ RM {{ ((numberOfPax - (selectedPackage.discountMinPax - 1)) * Number(selectedPackage.discountedPrice)).toFixed(2) }}</span>
+              </div>
+            </template>
+
             <template v-else>
-              Discounted rate applied automatically for current pax.
+              <div class="breakdown-row">
+                <span v-if="isSelectedLumpSum">Fixed Package Price</span>
+                <span v-else>{{ numberOfPax }} pax × RM {{ Number(selectedPackage.price).toFixed(2) }}</span>
+                <span>RM {{ packageSubtotal.toFixed(2) }}</span>
+              </div>
             </template>
-          </p>
+          </div>
+        
         </div>
 
         <!-- Rice Selection -->
@@ -520,6 +542,7 @@ Examples:
         </div>
       </div>
     </div>
+    <AIChatWidget />
   </div>
 </template>
 
@@ -528,9 +551,10 @@ import { useMenuStore } from '@/stores/menu'
 import { useQuotationsStore } from '@/stores/quotations'
 import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/Navbar.vue'
+import AIChatWidget from '@/components/AIChatWidget.vue'
 
 export default {
-  components: { Navbar },
+  components: { Navbar, AIChatWidget },
   data() {
     return {
       selectedProviderId: null,
@@ -676,31 +700,38 @@ export default {
     activePriceTotal() {
       if (!this.selectedPackage) return 0;
 
-      // 1. Get the base values from your database/API
       const basePrice = Number(this.selectedPackage.price) || 0;
-
-      // Use minPax as the base threshold (e.g., 1000)
       const basePaxLimit = Number(this.selectedPackage.minPax || 1);
       const currentPaxInput = Number(this.numberOfPax);
 
-      // 2. Flexible Logic for Lump Sum Packages
+      // 1. Lump Sum 逻辑 (保持不变)
       if (this.isSelectedLumpSum) {
         if (currentPaxInput <= basePaxLimit) {
-          // If guests are within the limit, return only the base price (RM 13,888)
           return basePrice;
         } else {
-          // If guests exceed limit, calculate: Base + (Extra Guests * Extra Rate)
-          // Example: 13,888 + (1 * 12)
           const extraGuests = currentPaxInput - basePaxLimit;
           const extraRatePerGuest = Number(this.selectedPackage.discountedPrice) || 0;
-
           return basePrice + (extraGuests * extraRatePerGuest);
         }
       }
 
-      // 3. Keep standard calculation for normal "Per Pax" packages
-      return this.activePricePerPax * this.numberOfPax;
+      // 2. 阶梯式 (Tiered Pricing) 逻辑
+      if (this.selectedPackage.discountEnabled && Number(this.selectedPackage.discountMinPax) > 0) {
+        const discountThreshold = Number(this.selectedPackage.discountMinPax);
+        const discountPrice = Number(this.selectedPackage.discountedPrice) || 0;
 
+        if (currentPaxInput >= discountThreshold) {
+          // 没达到门槛的人数（比如前 349 人）算原价
+          const normalPaxCount = Math.max(0, discountThreshold - 1);
+          // 超出门槛的人数（第 350 人起）算折扣价
+          const discountedPaxCount = Math.max(0, currentPaxInput - normalPaxCount);
+
+          return (normalPaxCount * basePrice) + (discountedPaxCount * discountPrice);
+        }
+      }
+
+      // 3. 没达到折扣门槛，全部算原价
+      return currentPaxInput * basePrice;
     },
     packageSubtotal() {
       return this.selectedPackage ? this.activePriceTotal : 0
@@ -2148,5 +2179,37 @@ Note: Customer is requesting a custom quotation. Please review their requirement
     width: 100%;
     justify-content: center;
   }
+}
+
+/* 计价明细框样式 */
+.price-breakdown-box {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.breakdown-row:last-child {
+  margin-bottom: 0;
+}
+
+.breakdown-row span:last-child {
+  font-weight: 600;
+  color: #334155;
+  font-family: 'Monaco', 'Consolas', monospace; /* 让数字对齐更好看 */
+}
+
+.highlight-discount {
+  color: #059669; /* 绿色，强调顾客省钱了 */
+  font-weight: 600;
 }
 </style>

@@ -77,11 +77,14 @@
               <div class="card-footer">
                 <div class="price-info">
                   <span class="price-label">Price per pax</span>
-                  <span class="price-value">RM {{ item.price }}</span>
-                </div>
+                  <span class="price-value">RM {{ Number(item.price).toFixed(2) }}</span> </div>
 
-                <div class="quantity-control">
-                  <button @click="decreaseQuantity(item.id)" class="qty-btn" :disabled="item.quantity <= 1">
+               <div class="quantity-control" :class="{ 'locked-control': item.category === 'quotation' }">
+                  <button 
+                    @click="decreaseQuantity(item.id)" 
+                    class="qty-btn" 
+                    :disabled="item.quantity <= 1 || item.category === 'quotation'"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                   </button>
                   <div class="qty-input">
@@ -90,10 +93,15 @@
                       :value="item.quantity" 
                       @change="updateQuantity(item.id, $event.target.value)"
                       min="1"
+                      :disabled="item.category === 'quotation'"
                     />
                     <span>pax</span>
                   </div>
-                  <button @click="increaseQuantity(item.id)" class="qty-btn">
+                  <button 
+                    @click="increaseQuantity(item.id)" 
+                    class="qty-btn" 
+                    :disabled="item.category === 'quotation'"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                   </button>
                 </div>
@@ -738,5 +746,17 @@ export default {
   .quantity-control {
     justify-content: space-between;
   }
+}
+
+/* 报价单锁定数量控制器的样式 */
+.quantity-control input:disabled {
+  background: transparent;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.locked-control {
+  border-color: #cbd5e1 !important;
+  background: #f1f5f9 !important; /* 变成淡灰色背景 */
 }
 </style>

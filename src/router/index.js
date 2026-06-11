@@ -50,6 +50,7 @@ import SuperAdminSettings from '@/views/SuperAdminSettings.vue'
 import Chat from '@/views/Chat.vue'
 import CateringProviderChat from '@/views/CateringProviderChat.vue'
 
+
 const routes = [
   // Public Routes
   { 

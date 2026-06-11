@@ -248,18 +248,20 @@
       </div>
       </div>
     </div>
+    <AIChatWidget />
   </div>
 </template>
 
 <script>
 import api from '@/services/api'
 import Navbar from '@/components/Navbar.vue'
+import AIChatWidget from '@/components/AIChatWidget.vue'
 import { useAuthStore } from '@/stores/auth'
 
 export default {
   name: 'Home',
   components: {
-    Navbar
+    Navbar , AIChatWidget
   },
   data() {
     return {

@@ -69,10 +69,11 @@
               <div class="price-main">
                 <span class="currency">RM</span>
                 <span class="amount">{{ pkg.price?.toFixed(2) }}</span>
-                <span class="per-pax">/ pax</span>
+                <span v-if="!pkg.isLumpSumPackage" class="per-pax">/ pax</span>
+                <span v-else class="per-pax"> (Total)</span>
               </div>
               <div class="min-pax-inline">
-                <span class="min-pax-label">Min Pax</span>
+                <span class="min-pax-label">{{ pkg.isLumpSumPackage ? 'Included Pax' : 'Min Pax' }}</span>
                 <span class="min-pax-value">{{ pkg.minPax || pkg.maxPax || 1 }}</span>
               </div>
             </div>
@@ -80,7 +81,12 @@
               v-if="pkg.discountEnabled && Number(pkg.discountMinPax) > 0 && Number(pkg.discountedPrice) >= 0"
               class="helper-text"
             >
-              Discount: {{ Number(pkg.discountMinPax) }}+ pax at RM {{ Number(pkg.discountedPrice).toFixed(2) }} / pax
+              <template v-if="pkg.isLumpSumPackage">
+                Excess: RM {{ Number(pkg.discountedPrice).toFixed(2) }} / extra pax
+              </template>
+              <template v-else>
+                Discount: {{ Number(pkg.discountMinPax) }}+ pax at RM {{ Number(pkg.discountedPrice).toFixed(2) }} / pax
+              </template>
             </div>
             
             <p class="pkg-desc">{{ pkg.description || 'No description provided.' }}</p>

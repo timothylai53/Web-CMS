@@ -695,18 +695,24 @@ export default {
           const extraGuests = guestsCount - discountMinPax;
           discountedPackageSubtotalRaw = basePriceValue + (extraGuests * discountedPerPax);
         }
-      } else {
-        // Standard Per Pax discount logic
+     } else {
+        // Standard Per Pax discount logic (Tiered / Excess Pax)
         const isDiscountEligible = Boolean(packageData?.discountEnabled)
           && discountedPerPax > 0
           && guestsCount > 0
           && (!hasDiscountThreshold || guestsCount >= discountMinPax)
 
         if (isDiscountEligible) {
-          discountedPackageSubtotalRaw = discountedPerPax * guestsCount;
+          // ✅ 阶梯打折逻辑：
+          // 没达到门槛的人数（按原价 basePriceValue 算）
+          const normalPaxCount = Math.max(0, discountMinPax - 1);
+          // 超出门槛的人数（按折扣价 discountedPerPax 算）
+          const discountedPaxCount = Math.max(0, guestsCount - normalPaxCount);
+          
+          discountedPackageSubtotalRaw = (normalPaxCount * basePriceValue) + (discountedPaxCount * discountedPerPax);
         }
       }
-
+      
       const waiterFee = Math.max(0, Number(packageData?.waiterFee) || 0)
       const waiterQuantity = Math.max(0, Number(packageData?.waiterQuantity) || 0)
       const waiterQuantityUsed = waiterQuantity > 0 ? waiterQuantity : 1
