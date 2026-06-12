@@ -10,7 +10,11 @@
             <h2>Financial Reports</h2>
             <p>Track your revenue, order volume, and business performance.</p>
           </div>
-          <div class="hero-actions">
+         <div class="hero-actions" style="display: flex; gap: 10px;">
+            <button @click="exportToCSV" class="btn-primary-outline">
+              <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span> Export CSV
+            </button>
+
             <button @click="exportToPdf" class="btn-primary-outline">
               <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span> Export PDF
             </button>
@@ -469,8 +473,71 @@ export default {
       // Save PDF
       const filename = `Sales_Report_${new Date().toISOString().split('T')[0]}.pdf`
       doc.save(filename)
+    },
+
+    exportToCSV() {
+      if (this.filteredOrders.length === 0) {
+        alert('No data to export.');
+        return;
+      }
+      
+      let csvContent = "data:text/csv;charset=utf-8,Order ID,Date,Customer,Pax,Amount (RM),Status\n";
+      
+      this.filteredOrders.forEach(order => {
+        const orderNum = this.getOrderNumber(order);
+        const date = this.formatDate(order.eventDate || order.createdAt).replace(/,/g, ''); 
+        const customer = (order.customerName || 'Unknown').replace(/,/g, '');
+        const pax = order.numberOfPax || 0;
+        const amount = order.totalAmount.toFixed(2);
+        const status = order.status;
+        
+        csvContent += `${orderNum},${date},${customer},${pax},${amount},${status}\n`;
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Sales_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      
+      link.click(); 
+      document.body.removeChild(link);
     }
   },
+
+  exportToCSV() {
+      if (this.filteredOrders.length === 0) {
+        alert('No data to export.');
+        return;
+      }
+      
+      // 1. 设置 CSV 的表头 (字段名)
+      let csvContent = "data:text/csv;charset=utf-8,Order ID,Date,Customer,Pax,Amount (RM),Status\n";
+      
+      // 2. 循环填入过滤后的订单数据
+      this.filteredOrders.forEach(order => {
+        const orderNum = this.getOrderNumber(order);
+        const date = this.formatDate(order.eventDate || order.createdAt).replace(/,/g, ''); // 移除日期里的逗号防止错格
+        const customer = (order.customerName || 'Unknown').replace(/,/g, '');
+        const pax = order.numberOfPax || 0;
+        const amount = order.totalAmount.toFixed(2);
+        const status = order.status;
+        
+        // 用逗号拼接成一行
+        csvContent += `${orderNum},${date},${customer},${pax},${amount},${status}\n`;
+      });
+      
+      // 3. 触发浏览器下载
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Sales_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      
+      link.click(); // 虚拟点击触发下载
+      document.body.removeChild(link);
+    },
+
   async mounted() {
     const ordersStore = useOrdersStore()
     await ordersStore.fetchAllOrders()

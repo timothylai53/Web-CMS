@@ -147,17 +147,10 @@
 
         <div v-if="selectedPackage.venueAvailable" class="form-section">
           <div class="section-header">
-            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 22h18"></path>
-                <path d="M5 22V8l7-4 7 4v14"></path>
-                <path d="M9 12h6"></path>
-                <path d="M9 16h6"></path>
-              </svg></div>
+            <div class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"></path><path d="M5 22V8l7-4 7 4v14"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg></div>
             <div>
               <h3>Venue Option</h3>
-              <p class="section-subtitle">Tick if you want venue provided by this package (RM {{
-                Number(selectedPackage.venueFee || 0).toFixed(2) }}).</p>
+              <p class="section-subtitle">Tick if you want venue provided by this package (RM {{ Number(selectedPackage.venueFee || 0).toFixed(2) }}).</p>
             </div>
           </div>
           <label class="venue-checkbox-row">
@@ -166,6 +159,32 @@
           </label>
           <div v-if="wantsVenue" class="venue-cost-note">
             Venue add-on: RM {{ venueAddonTotal.toFixed(2) }}
+          </div>
+          
+          <div v-if="wantsVenue && selectedPackage.venues && selectedPackage.venues.length > 0" class="venue-selection-area">
+            <h4 style="margin: 20px 0 10px; font-size: 14px; color: #475569;">Select Your Preferred Venue:</h4>
+            <div class="selection-grid">
+              <label 
+                v-for="(venue, index) in selectedPackage.venues" 
+                :key="'venue-'+index" 
+                class="selection-card venue-card"
+                :class="{ selected: selectedVenue === venue.name }"
+              >
+                <input type="radio" :value="venue.name" v-model="selectedVenue" class="selection-checkbox" />
+                <div v-if="venue.image" class="selection-image">
+                  <img :src="resolveFoodImage(venue.image)" :alt="venue.name" />
+                </div>
+                <div class="selection-label" style="flex-direction: column; align-items: flex-start; padding: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <div class="selection-check"></div>
+                    <span style="font-weight: 700;">{{ venue.name }}</span>
+                  </div>
+                  <div style="font-size: 11px; color: #64748b; margin-left: 26px;">
+                    📍 {{ venue.location }}
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -567,6 +586,7 @@ export default {
       selectedDesserts: [],
       wantsWaiters: false,
       wantsVenue: false,
+      selectedVenue: null,
       remark: "",
       notification: {
         show: false,
@@ -807,6 +827,7 @@ export default {
       this.selectedDesserts = []
       this.wantsWaiters = false
       this.wantsVenue = false
+      this.selectedVenue = null // 👈 新增重置
       this.remark = ""
 
       // Fetch foods for this specific provider
@@ -857,8 +878,18 @@ export default {
         )
       }
       if (this.selectedPackage.venueAvailable) {
+        if (this.wantsVenue && !this.selectedVenue && this.selectedPackage.venues?.length > 0) {
+           // 强制顾客必须选一个场地
+           this.showNotification("Please select a specific venue from the options.", "error")
+           return;
+        }
+        
+        const venueSelectionText = this.wantsVenue && this.selectedVenue 
+          ? `Yes (Selected: ${this.selectedVenue})` 
+          : (this.wantsVenue ? 'Yes' : 'No');
+
         itemsSummary.push(
-          `Venue: ${this.wantsVenue ? `Yes (RM ${this.venueAddonTotal.toFixed(2)})` : 'No'}`
+          `Venue: ${venueSelectionText} (RM ${this.venueAddonTotal.toFixed(2)})`
         )
       }
 

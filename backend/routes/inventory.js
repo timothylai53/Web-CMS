@@ -73,11 +73,17 @@ router.post('/items', async (req, res) => {
       return res.status(401).json({ message: 'User not authenticated properly' });
     }
     
+    // 1. 自动接收所有前端传来的数据（包括 lowStockThreshold）
     const itemData = {
       ...req.body,
       providerId: providerId,
       lastUpdatedBy: providerId
     };
+    
+    // 👇 2. 新增这 3 行：如果没有传警告线，就设定默认值
+    if (itemData.lowStockThreshold === undefined || itemData.lowStockThreshold === null) {
+      itemData.lowStockThreshold = itemData.itemType === 'consumable' ? 10 : 5;
+    }
     
     console.log('Item data to save:', itemData);
     
@@ -118,12 +124,12 @@ router.put('/items/:id', async (req, res) => {
     
     item.lastUpdatedBy = providerId;
     
-    // Recalculate availability for equipment
+   // Recalculate availability for equipment
     if (item.itemType === 'equipment' && req.body.totalQuantity !== undefined) {
-      const usedQuantity = item.inUseQuantity + item.damagedQuantity + item.lostQuantity;
+      const usedQuantity = (item.inUseQuantity || 0) + (item.damagedQuantity || 0) + (item.lostQuantity || 0);
       item.availableQuantity = Math.max(0, req.body.totalQuantity - usedQuantity);
     }
-    
+
     await item.save();
     
     res.json(item);
@@ -188,20 +194,39 @@ router.post('/items/:id/adjust-stock', async (req, res) => {
 });
 
 // Get low stock alerts
+// Get low stock alerts
 router.get('/alerts/low-stock', async (req, res) => {
   try {
     const providerId = req.user.userId || req.user._id;
-    const items = await InventoryItem.find({
+
+    const lowStockItems = await InventoryItem.find({
       providerId: providerId,
-      itemType: 'consumable',
-      $expr: { $lte: ['$quantity', '$reorderPoint'] },
-      quantity: { $gt: 0 }
-    }).sort({ quantity: 1 });
-    
-    res.json(items);
+      $expr: {
+        $or: [
+          // 1. Consumables: Check lowStockThreshold, fallback to reorderPoint, fallback to 10
+          {
+            $and: [
+              { $eq: ["$itemType", "consumable"] },
+              { $gt: ["$quantity", 0] },
+              { $lte: ["$quantity", { $ifNull: ["$lowStockThreshold", { $ifNull: ["$reorderPoint", 10] }] }] } 
+            ]
+          },
+          // 2. Equipment: Check lowStockThreshold, fallback to reorderPoint, fallback to 5
+          {
+            $and: [
+              { $eq: ["$itemType", "equipment"] },
+              { $gt: ["$availableQuantity", 0] },
+              { $lte: ["$availableQuantity", { $ifNull: ["$lowStockThreshold", { $ifNull: ["$reorderPoint", 5] }] }] } 
+            ]
+          }
+        ]
+      }
+    }).sort({ itemName: 1 }).lean();
+
+    res.json(lowStockItems);
   } catch (error) {
     console.error('Error fetching low stock alerts:', error);
-    res.status(500).json({ message: 'Failed to fetch alerts' });
+    res.status(500).json({ message: 'Failed to fetch low stock alerts' });
   }
 });
 
@@ -264,11 +289,27 @@ router.get('/statistics', async (req, res) => {
     });
     
     // Low stock count
+    // Low stock count (Matches the alert list logic exactly)
     const lowStockCount = await InventoryItem.countDocuments({
       providerId,
-      itemType: 'consumable',
-      $expr: { $lte: ['$quantity', '$reorderPoint'] },
-      quantity: { $gt: 0 }
+      $expr: {
+        $or: [
+          {
+            $and: [
+              { $eq: ["$itemType", "consumable"] },
+              { $gt: ["$quantity", 0] },
+              { $lte: ["$quantity", { $ifNull: ["$lowStockThreshold", { $ifNull: ["$reorderPoint", 10] }] }] }
+            ]
+          },
+          {
+            $and: [
+              { $eq: ["$itemType", "equipment"] },
+              { $gt: ["$availableQuantity", 0] },
+              { $lte: ["$availableQuantity", { $ifNull: ["$lowStockThreshold", { $ifNull: ["$reorderPoint", 5] }] }] }
+            ]
+          }
+        ]
+      }
     });
     
     // Expiring soon count

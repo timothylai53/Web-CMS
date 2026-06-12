@@ -72,6 +72,11 @@ const packageSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
+  venues: [{
+    name: String,
+    location: String,
+    image: String
+  }],
   mainDishLimit: {
     type: Number,
     min: 1,

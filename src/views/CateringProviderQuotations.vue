@@ -80,8 +80,9 @@
                   </tr>
                   <tr v-for="quotation in filteredQuotations" :key="quotation._id">
                     <td class="order-id">
-                      #{{ (quotation.quotationNumber || quotation._id || '').slice(-6).toUpperCase() }}
-                    </td>
+  #{{ (quotation.quotationNumber || quotation._id || '').slice(-6).toUpperCase() }}
+  <span v-if="isNewQuotation(quotation.createdAt, quotation.status)" class="badge-new">NEW</span>
+</td>
                     <td>
                       <div class="customer-info">
                         <div class="avatar-placeholder">{{ (quotation.customerName || 'U').charAt(0) }}</div>
@@ -646,6 +647,14 @@ export default {
     }
   },
   methods: {
+    // 在 methods 里面添加这个函数
+isNewQuotation(createdAt, status) {
+  if (status !== 'pending') return false; // 只有 pending 才算新提醒
+  const quoteDate = new Date(createdAt);
+  const now = new Date();
+  const diffHours = (now - quoteDate) / (1000 * 60 * 60);
+  return diffHours <= 24; // 24小时内的订单标记为 NEW
+},
     toCents(value) {
       const numberValue = Number(value)
       if (!Number.isFinite(numberValue)) return 0
@@ -712,7 +721,7 @@ export default {
           discountedPackageSubtotalRaw = (normalPaxCount * basePriceValue) + (discountedPaxCount * discountedPerPax);
         }
       }
-      
+
       const waiterFee = Math.max(0, Number(packageData?.waiterFee) || 0)
       const waiterQuantity = Math.max(0, Number(packageData?.waiterQuantity) || 0)
       const waiterQuantityUsed = waiterQuantity > 0 ? waiterQuantity : 1
@@ -2491,5 +2500,23 @@ td {
   .avatar-placeholder {
     display: none;
   }
+}
+.badge-new {
+  background-color: #ef4444; /* 显眼的红色 */
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+  /* 加上呼吸灯效果，非常吸引眼球 */
+  animation: pulse-red 2s infinite; 
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 </style>

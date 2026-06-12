@@ -388,10 +388,36 @@
                 </div>
               </div>
 
-              <div class="form-group" v-if="packageForm.venueAvailable">
+             <div class="form-group" v-if="packageForm.venueAvailable">
                 <label>Venue Price (RM)</label>
                 <input v-model.number="packageForm.venueFee" type="number" min="0" step="0.01" class="form-input" />
                 <small class="helper-text">This venue fee is added only when customer selects venue.</small>
+                
+                <div class="venues-management-section">
+                  <label style="margin-top: 16px;">Available Venues</label>
+                  <div v-for="(venue, index) in packageForm.venues" :key="index" class="venue-setup-card">
+                    <div class="venue-setup-row">
+                      <div class="form-group half" style="margin-bottom: 0;">
+                        <input v-model="venue.name" type="text" class="form-input-compact" placeholder="Venue Name (e.g. Grand Hall)" required />
+                      </div>
+                      <div class="form-group half" style="margin-bottom: 0;">
+                        <input v-model="venue.location" type="text" class="form-input-compact" placeholder="Location / Address" required />
+                      </div>
+                    </div>
+                    <div class="venue-setup-row" style="margin-top: 8px;">
+                      <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                        <input type="file" accept="image/*" @change="onVenueImageChange($event, index)" class="form-input-compact" />
+                        <small v-if="venue.image" class="helper-text" style="color: #10b981;">✓ Image attached</small>
+                      </div>
+                      <button type="button" @click="removeVenue(index)" class="btn-icon-delete-small">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <button type="button" @click="addVenue" class="btn-secondary-action" style="padding: 6px 12px; font-size: 12px; margin-top: 8px;">
+                    + Add Another Venue
+                  </button>
+                </div>
               </div>
 
               <div class="form-group">
@@ -596,11 +622,22 @@ export default {
         waiterFee: 0,
         venueAvailable: false,
         venueFee: 0,
+        venues: [],
         mainDishLimit: 8,
         sideDishLimit: 5,
         beverageLimit: 3,
         dessertLimit: 3
       }
+    },
+    addVenue() {
+      this.packageForm.venues.push({ name: '', location: '', image: '', imageFile: null });
+    },
+    removeVenue(index) {
+      this.packageForm.venues.splice(index, 1);
+    },
+    onVenueImageChange(event, index) {
+      const file = event.target.files?.[0] || null;
+      this.packageForm.venues[index].imageFile = file;
     },
     openPackageModal() {
       this.editingPackage = null
@@ -641,6 +678,7 @@ export default {
         waiterFee: Number(pkg.waiterFee) >= 0 ? Number(pkg.waiterFee) : 0,
         venueAvailable: !!pkg.venueAvailable,
         venueFee: Number(pkg.venueFee) >= 0 ? Number(pkg.venueFee) : 0,
+        venues: Array.isArray(pkg.venues) ? pkg.venues.map(v => ({...v, imageFile: null})) : [],
         mainDishLimit: Number(pkg.mainDishLimit) > 0 ? Number(pkg.mainDishLimit) : 8,
         sideDishLimit: Number(pkg.sideDishLimit) > 0 ? Number(pkg.sideDishLimit) : 5,
         beverageLimit: Number(pkg.beverageLimit) > 0 ? Number(pkg.beverageLimit) : 3,
@@ -681,6 +719,20 @@ export default {
           return
         }
 
+        const processedVenues = [];
+        if (this.packageForm.venueAvailable && this.packageForm.venues) {
+          for (const v of this.packageForm.venues) {
+            let uploadedPath = v.image || '';
+            if (v.imageFile) {
+              // 复用你原本写好的上传图片API
+              uploadedPath = await this.uploadPackageImageFile(v.imageFile); 
+            }
+            if (v.name) { // 只有填了名字的才保存
+              processedVenues.push({ name: v.name, location: v.location, image: uploadedPath });
+            }
+          }
+        }
+
         const payload = {
           name: this.packageForm.name,
           price: basePrice,
@@ -703,6 +755,7 @@ export default {
           venueFee: this.packageForm.venueAvailable
             ? Math.max(0, Number(this.packageForm.venueFee) || 0)
             : 0,
+            venues: processedVenues,
           mainDishLimit: Math.max(1, Number(this.packageForm.mainDishLimit) || 8),
           sideDishLimit: Math.max(1, Number(this.packageForm.sideDishLimit) || 5),
           beverageLimit: Math.max(1, Number(this.packageForm.beverageLimit) || 3),
@@ -1391,8 +1444,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 .checkbox-label {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: center; /* 确保垂直居中 */
   font-size: 14px;
   color: #334155;
   cursor: pointer;
@@ -1405,10 +1457,21 @@ input:checked + .slider:before { transform: translateX(16px); }
   padding: 10px 12px;
 }
 
-.checkbox-label input {
-  width: 16px;
-  height: 16px;
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
   cursor: pointer;
+  /* 🌟 核心魔法：强制右侧留出 12px 的空白，无视任何冲突 */
+  margin: 0 12px 0 0 !important; 
+  flex-shrink: 0;
+  accent-color: #0f172a;
+  /* 🌟 核心魔法：往下微调 1 像素，完美对齐右边文字的视觉中心 */
+  transform: translateY(4px); 
+}
+
+.checkbox-label span {
+  line-height: 1.5;
+  display: inline-block;
 }
 
 .btn-primary-action {
@@ -1551,5 +1614,24 @@ input:checked + .slider:before { transform: translateX(16px); }
   .quick-search-row { flex-direction: column; }
   .quick-add-row { flex-direction: column; }
   .btn-quick-add { width: 100%; }
+}
+.venues-management-section {
+  margin-top: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  padding: 16px;
+  border-radius: 8px;
+}
+.venue-setup-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+.venue-setup-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 </style>

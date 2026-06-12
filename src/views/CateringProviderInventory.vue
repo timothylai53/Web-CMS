@@ -10,12 +10,6 @@
           <p class="subtitle">Track raw materials, equipment, and stock levels</p>
         </div>
         <div class="header-actions">
-          <button @click="showAddItemModal = true" class="btn-primary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            <span>Add New Item</span>
-          </button>
         </div>
       </header>
 
@@ -263,7 +257,7 @@
                     <td>
                       <span class="font-medium">{{ item.quantity }} {{ item.unit }}</span>
                     </td>
-                    <td>RM {{ (item.quantity * item.costPerUnit).toFixed(2) }}</td>
+                    <td>RM {{ (item.quantity * (item.costPerUnit || 0)).toFixed(2) }}</td>
                     <td>
                       <div class="expiry-cell">
                         <span>{{ item.expirationDate ? formatDate(item.expirationDate) : '-' }}</span>
@@ -271,8 +265,8 @@
                       </div>
                     </td>
                     <td>
-                      <span :class="['status-pill', getStatusClass(item.status)]">
-                        {{ formatStatus(item.status) }}
+                      <span :class="['status-pill', getStatusClass(getItemStatus(item))]">
+                        {{ formatStatus(getItemStatus(item)) }}
                       </span>
                     </td>
                     <td class="text-right">
@@ -362,15 +356,15 @@
                         </select>
                       </td>
                       <td>
-                        <input 
-                          v-model.number="row.totalQuantity" 
-                          type="number" 
-                          min="0" 
-                          step="1" 
-                          className="form-input-sm"
-                          placeholder="0"
-                          :class="{ 'error': row.errors?.totalQuantity }"
-                        />
+                       <input 
+  v-model.number="row.totalQuantity" 
+  type="number" 
+  min="0" 
+  step="1" 
+  class="form-input-sm"
+  placeholder="0"
+  :class="{ 'error': row.errors?.totalQuantity }"
+/>
                       </td>
                       <td>
                         <input v-model.number="row.availableQuantity" class="form-input-sm" type="number" min="0" step="1" placeholder="0" />
@@ -489,162 +483,149 @@
           </div>
 
           <!-- Low Stock Alerts Tab -->
-          <div v-if="activeTab === 'low-stock'" class="tab-pane">
-            <div v-if="loading" class="loading-state">
-               <div class="spinner"></div>
-               <p>Checking stock levels...</p>
-            </div>
-            
-            <div v-else-if="lowStockItems.length === 0" class="empty-state">
-              <div class="empty-icon text-success">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <path d="M22 4L12 14.01l-3-3"/>
-                </svg>
-              </div>
-              <h3>All good!</h3>
-              <p>No low stock alerts at the moment.</p>
-            </div>
-            
-            <div v-else class="alerts-grid">
-              <div v-for="item in lowStockItems" :key="item._id" class="alert-card low-stock">
-                <div class="alert-header">
-                  <div class="alert-icon-wrapper warning">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                      <line x1="12" y1="9" x2="12" y2="13"/>
-                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+         <div v-if="activeTab === 'low-stock'" class="tab-pane">
+                <div v-if="loading" class="loading-state">
+                   <div class="spinner"></div>
+                   <p>Checking stock levels...</p>
+                </div>
+                
+                <div v-else-if="lowStockItems.length === 0" class="empty-state">
+                  <div class="empty-icon text-success">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <path d="M22 4L12 14.01l-3-3"/>
                     </svg>
                   </div>
-                  <div class="alert-content">
-                     <h4>{{ item.itemName }}</h4>
-                     <p>{{ item.category }}</p>
+                  <h3>All good!</h3>
+                  <p>No low stock alerts at the moment.</p>
+                </div>
+
+                <div v-else class="alerts-container-grid">
+                  <div class="modern-alert-card amber" v-for="item in lowStockItems" :key="item._id">
+                    <div class="alert-indicator"></div>
+                    <div class="alert-content-wrapper">
+                      <div class="alert-main-info">
+                        <div class="alert-title-row">
+                          <span class="item-name">{{ item.itemName }}</span>
+                          <span class="category-tag">{{ item.category }}</span>
+                        </div>
+                        <div class="alert-metrics-grid">
+                          <div class="metric-item">
+                            <span class="m-label">Current Stock</span>
+                            <span class="m-value critical-amber">
+                              {{ item.itemType === 'consumable' ? item.quantity : item.availableQuantity }} {{ item.unit || 'pcs' }}
+                            </span>
+                          </div>
+                          <div class="metric-item">
+                            <span class="m-label">Alert At</span>
+                            <span class="m-value">≤ {{ item.lowStockThreshold || item.reorderPoint || (item.itemType === 'consumable' ? 10 : 5) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                     <button v-if="item.itemType === 'consumable'" class="btn-alert-action restock" @click="adjustStock(item)">
+  Restock
+</button>
+<button v-else class="btn-alert-action restock" @click="editItem(item)">
+  Manage Stock
+</button>
+                    </div>
                   </div>
                 </div>
-                
-                <div class="alert-body">
-                  <div class="alert-row">
-                    <span>Current Stock</span>
-                    <span class="text-warning font-bold">{{ item.quantity }} {{ item.unit }}</span>
-                  </div>
-                  <div class="alert-row">
-                     <span>Reorder Level</span>
-                     <span>{{ item.reorderPoint || 'N/A' }}</span>
-                  </div>
-                  <div v-if="item.supplier?.name" class="alert-row">
-                     <span>Supplier</span>
-                     <span>{{ item.supplier.name }}</span>
-                  </div>
                 </div>
-                
-                <div class="alert-footer">
-                   <button @click="adjustStock(item)" class="btn-sm btn-primary full-width">Restock Now</button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <!-- Expiring Items Tab -->
           <div v-if="activeTab === 'expiring'" class="tab-pane">
-            <div v-if="loading" class="loading-state">
-               <div class="spinner"></div>
-               <p>Checking expiration dates...</p>
-            </div>
-            
-            <div v-else-if="expiringItems.length === 0" class="empty-state">
-              <div class="empty-icon text-success">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                   <circle cx="12" cy="12" r="10"/>
-                   <path d="M12 6v6l4 2"/>
-                </svg>
-              </div>
-              <h3>Fresh Inventory</h3>
-              <p>No items expiring soon.</p>
-            </div>
-            
-            <div v-else class="alerts-grid">
-               <div v-for="item in expiringItems" :key="item._id" class="alert-card expiring">
-                <div class="alert-header">
-                  <div class="alert-icon-wrapper danger">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <div v-if="loading" class="loading-state">
+                   <div class="spinner"></div>
+                   <p>Checking expiration dates...</p>
+                </div>
+                
+                <div v-else-if="expiringItems.length === 0" class="empty-state">
+                  <div class="empty-icon text-success">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <path d="M22 4L12 14.01l-3-3"/>
                     </svg>
                   </div>
-                  <div class="alert-content">
-                     <h4>{{ item.itemName }}</h4>
-                     <p>{{ item.category }}</p>
+                  <h3>All good!</h3>
+                  <p>No items are expiring soon.</p>
+                </div>
+
+                <div v-else class="alerts-container-grid">
+                  <div class="modern-alert-card red" v-for="item in expiringItems" :key="item._id">
+                    <div class="alert-indicator"></div>
+                    <div class="alert-content-wrapper">
+                      <div class="alert-main-info">
+                        <div class="alert-title-row">
+                          <span class="item-name">{{ item.itemName }}</span>
+                          <span class="category-tag">{{ item.category }}</span>
+                        </div>
+                        <div class="alert-metrics-grid">
+                          <div class="metric-item">
+                            <span class="m-label">Expires Date</span>
+                            <span class="m-value critical-red">
+                              {{ new Date(item.expirationDate).toLocaleDateString() }}
+                            </span>
+                          </div>
+                          <div class="metric-item">
+                            <span class="m-label">Value at Risk</span>
+                            <span class="m-value">RM {{ (item.quantity * (item.costPerUnit || 0)).toFixed(2) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button class="btn-alert-action dispose" @click="adjustStock(item)">
+  Manage
+</button>
+                    </div>
                   </div>
                 </div>
-                
-                <div class="alert-body">
-                  <div class="alert-row">
-                    <span>Expiration Date</span>
-                    <span class="text-danger font-bold">{{ formatDate(item.expirationDate) }}</span>
-                  </div>
-                  <div class="alert-row">
-                     <span>Days Remaining</span>
-                     <span class="text-danger">{{ daysUntilExpiry(item.expirationDate) }} days</span>
-                  </div>
-                  <div class="alert-row">
-                     <span>Stock</span>
-                     <span>{{ item.quantity }} {{ item.unit }}</span>
-                  </div>
-                  <div class="alert-row">
-                     <span>Value at Risk</span>
-                     <span>RM {{ (item.quantity * item.costPerUnit).toFixed(2) }}</span>
-                  </div>
-                </div>
-                
-                <div class="alert-footer">
-                   <button @click="editItem(item)" class="btn-sm btn-outline-danger full-width">Update / Dispose</button>
-                </div>
-              </div>
             </div>
-          </div>
 
         </div>
       </section>
     </main>
 
     <!-- Modal for Add/Edit -->
-    <div v-if="showAddItemModal || editingItem" class="modal-backdrop" @click.self="closeModal">
-      <div class="modal-card">
+    <div v-if="showAddItemModal || editingItem" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-window">
         <div class="modal-header">
-          <h3>{{ editingItem ? 'Edit Item' : 'New Inventory Item' }}</h3>
-          <button @click="closeModal" class="btn-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </button>
+          <div class="header-title">
+            <h3>{{ editingItem ? '📝 Edit Inventory Item' : '✨ New Inventory Item' }}</h3>
+            <p>Fill in the details to update your kitchen stock.</p>
+          </div>
+          <button @click="closeModal" class="btn-close-x">&times;</button>
         </div>
         
-        <div class="modal-body">
-           <div class="form-group" v-if="!editingItem">
-             <label ref="typeLabel">Item Type</label>
-             <div class="type-selector">
-                <label class="radio-card" :class="{ active: itemForm.itemType === 'consumable' }">
-                  <input type="radio" v-model="itemForm.itemType" value="consumable">
-                  <span class="radio-label">Raw Material</span>
-                  <span class="radio-desc">Consumables like ingredients</span>
-                </label>
-                <label class="radio-card" :class="{ active: itemForm.itemType === 'equipment' }">
-                  <input type="radio" v-model="itemForm.itemType" value="equipment">
-                  <span class="radio-label">Equipment</span>
-                  <span class="radio-desc">Reusable tools & assets</span>
-                </label>
-             </div>
+        <div class="modal-body-scroll">
+           <div class="form-section-title">Item Classification</div>
+           <div class="type-selection-grid" v-if="!editingItem">
+              <label class="type-card" :class="{ active: itemForm.itemType === 'consumable' }">
+                <input type="radio" v-model="itemForm.itemType" value="consumable">
+                <div class="type-icon">🥫</div>
+                <div class="type-info">
+                  <strong>Raw Material</strong>
+                  <span>Ingredients & Consumables</span>
+                </div>
+              </label>
+              <label class="type-card" :class="{ active: itemForm.itemType === 'equipment' }">
+                <input type="radio" v-model="itemForm.itemType" value="equipment">
+                <div class="type-icon">🍳</div>
+                <div class="type-info">
+                  <strong>Equipment</strong>
+                  <span>Kitchen Tools & Reusables</span>
+                </div>
+              </label>
            </div>
 
-           <div class="form-row">
-             <div class="form-group">
+           <div class="form-grid">
+             <div class="form-group full">
                <label>Item Name *</label>
-               <input v-model="itemForm.itemName" type="text" class="form-input" placeholder="e.g. Basmati Rice">
+               <input v-model="itemForm.itemName" type="text" class="form-input-modern" placeholder="e.g. Premium Basmati Rice">
              </div>
+             
              <div class="form-group">
                <label>Category *</label>
-               <select v-model="itemForm.category" class="form-select">
+               <select v-model="itemForm.category" class="form-select-modern">
                   <template v-if="itemForm.itemType === 'consumable'">
                     <option value="Dry Goods">Dry Goods</option>
                     <option value="Chilled">Chilled</option>
@@ -663,128 +644,128 @@
                   </template>
                </select>
              </div>
-           </div>
 
-           <!-- Consumable Specifics -->
-           <template v-if="itemForm.itemType === 'consumable'">
-             <div class="form-row three-col">
+             <template v-if="itemForm.itemType === 'consumable'">
                <div class="form-group">
-                 <label>Quantity *</label>
-                 <input v-model.number="itemForm.quantity" type="number" min="0" step="0.01" class="form-input">
-               </div>
-               <div class="form-group">
-                 <label>Unit *</label>
-                 <select v-model="itemForm.unit" class="form-select">
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                    <option value="liter">L</option>
-                    <option value="ml">ml</option>
-                    <option value="pieces">pcs</option>
-                    <option value="boxes">box</option>
-                    <option value="bags">bag</option>
+                 <label>Unit Type</label>
+                 <select v-model="itemForm.unit" class="form-select-modern">
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="g">Gram (g)</option>
+                    <option value="liter">Liter (L)</option>
+                    <option value="ml">Milliliter (ml)</option>
+                    <option value="pieces">Pieces (pcs)</option>
                  </select>
                </div>
                <div class="form-group">
-                 <label>Total Price (RM)</label>
-                 <input v-model.number="itemForm.totalPrice" type="number" step="0.01" class="form-input">
+                 <label>Current Quantity</label>
+                 <input v-model.number="itemForm.quantity" type="number" step="0.01" class="form-input-modern">
                </div>
-             </div>
-             
-             <div class="form-row">
+               
+               <div class="form-group">
+                 <label>Low Stock Alert At ({{ itemForm.unit }})</label>
+                 <input v-model.number="itemForm.lowStockThreshold" type="number" class="form-input-modern" placeholder="e.g. 10">
+                 <small class="text-sm">Alerts you when stock falls below this level.</small>
+               </div>
+
+               <div class="form-group">
+                 <label>Total Value (RM)</label>
+                 <input v-model.number="itemForm.totalPrice" type="number" step="0.01" class="form-input-modern">
+               </div>
                <div class="form-group">
                  <label>Expiration Date</label>
-                 <input v-model="itemForm.expirationDate" type="date" class="form-input">
+                 <input v-model="itemForm.expirationDate" type="date" class="form-input-modern">
                </div>
                <div class="form-group">
-                 <label>Alert Days Before</label>
-                 <input v-model.number="itemForm.daysBeforeExpiryAlert" type="number" class="form-input" placeholder="7">
+                 <label>Alert (Days Before)</label>
+                 <input v-model.number="itemForm.daysBeforeExpiryAlert" type="number" class="form-input-modern" placeholder="7">
                </div>
-             </div>
-           </template>
+             </template>
 
-           <!-- Equipment Specifics -->
-           <template v-else>
-              <div class="form-row">
-                 <div class="form-group">
-                   <label>Total Quantity *</label>
-                   <input v-model.number="itemForm.totalQuantity" type="number" min="1" class="form-input">
-                 </div>
-              </div>
-           </template>
-           
-           <div class="form-group">
-              <label>Description</label>
-              <textarea v-model="itemForm.description" rows="2" class="form-textarea"></textarea>
+             <template v-if="itemForm.itemType === 'equipment'">
+               <div class="form-group">
+                 <label>Total Quantity Owned</label>
+                 <input v-model.number="itemForm.totalQuantity" type="number" class="form-input-modern">
+               </div>
+               <div class="form-group">
+                 <label>Currently Available (Auto-calculated)</label>
+                 <input v-model.number="itemForm.availableQuantity" type="number" class="form-input-modern" disabled style="background-color: #e2e8f0; cursor: not-allowed; color: #64748b;">
+               </div>
+               
+               <div class="form-group">
+                 <label>Min Available Equipment Alert</label>
+                 <input v-model.number="itemForm.lowStockThreshold" type="number" class="form-input-modern" placeholder="e.g. 5">
+                 <small class="text-sm">Alerts you when available items fall below this level.</small>
+               </div>
+             </template>
            </div>
            
-           <div class="modal-section-title">Supplier Info</div>
-           <div class="form-row">
-              <div class="form-group">
-                 <label>Supplier Name</label>
-                 <input v-model="itemForm.supplier.name" type="text" class="form-input" placeholder="Optional">
-              </div>
-              <div class="form-group">
-                 <label>Storage Location</label>
-                 <input v-model="itemForm.storageLocation" type="text" class="form-input" placeholder="e.g. Shelf A">
-              </div>
+           <div class="form-group full">
+              <label>Description / Internal Notes</label>
+              <textarea v-model="itemForm.description" rows="2" class="form-textarea-modern" placeholder="Any special storage instructions..."></textarea>
            </div>
-        </div>
+          </div>
         
-        <div class="modal-footer">
-          <button @click="closeModal" class="btn-ghost">Cancel</button>
-          <button @click="saveItem" class="btn-primary" :disabled="saving">
-            {{ saving ? 'Saving...' : 'Save Item' }}
+        <div class="modal-footer-modern">
+          <button @click="closeModal" class="btn-cancel">Cancel</button>
+          <button @click="saveItem" class="btn-save" :disabled="saving">
+            {{ saving ? 'Processing...' : (editingItem ? 'Update Item' : 'Add to Inventory') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Stock Adjustment Modal -->
-    <div v-if="adjustingItem" class="modal-backdrop" @click.self="adjustingItem = null">
-      <div class="modal-card">
+    <div v-if="adjustingItem" class="modal-overlay" @click.self="adjustingItem = null">
+      <div class="modal-window mini">
         <div class="modal-header">
-           <h3>Adjust Stock: {{ adjustingItem.itemName }}</h3>
-           <button @click="adjustingItem = null" class="btn-icon">&times;</button>
+           <div class="header-title">
+             <h3>📦 Adjust Stock Level</h3>
+             <p>{{ adjustingItem.itemName }}</p>
+           </div>
+           <button @click="adjustingItem = null" class="btn-close-x">&times;</button>
         </div>
         <div class="modal-body">
-           <div class="stock-summary-card">
-              <div class="current-stat">
-                 <span class="label">Current Level</span>
-                 <span class="value">{{ adjustingItem.quantity }} {{ adjustingItem.unit }}</span>
+           <div class="adjustment-preview-card">
+              <div class="preview-side">
+                 <span class="preview-label">Current</span>
+                 <span class="preview-value">{{ adjustingItem.quantity }}</span>
               </div>
-              <div class="arrow">→</div>
-              <div class="new-stat">
-                 <span class="label">New Level</span>
-                 <span class="value text-primary">{{ calculateNewStock() }} {{ adjustingItem.unit }}</span>
+              <div class="preview-arrow">➡️</div>
+              <div class="preview-side">
+                 <span class="preview-label">Projected</span>
+                 <span class="preview-value highlight">{{ calculateNewStock() }}</span>
               </div>
+              <div class="preview-unit">{{ adjustingItem.unit }}</div>
            </div>
 
            <div class="form-group">
-             <label>Adjustment Action</label>
-             <select v-model="stockAdjustment.type" class="form-select">
-               <option value="add">Add Stock (Restock)</option>
-               <option value="subtract">Subtract Stock (Used/Wasted)</option>
-               <option value="set">Set Exact Quantity (Audit)</option>
-             </select>
+             <label>Action Type</label>
+             <div class="action-toggle-group">
+               <button @click="stockAdjustment.type = 'add'" :class="{ active: stockAdjustment.type === 'add' }">Restock (+)</button>
+               <button @click="stockAdjustment.type = 'subtract'" :class="{ active: stockAdjustment.type === 'subtract' }">Used/Wasted (-)</button>
+               <button @click="stockAdjustment.type = 'set'" :class="{ active: stockAdjustment.type === 'set' }">Audit (Set)</button>
+             </div>
            </div>
            
            <div class="form-group">
-             <label>{{ stockAdjustment.type === 'set' ? 'Actual Quantity' : 'Quantity Change' }}</label>
-             <input v-model.number="stockAdjustment.quantity" type="number" min="0" step="0.01" class="form-input" autofocus>
+             <label>{{ stockAdjustment.type === 'set' ? 'Physical Count Quantity' : 'Change Amount' }}</label>
+             <div class="input-with-badge">
+               <input v-model.number="stockAdjustment.quantity" type="number" class="form-input-modern large-font" autofocus>
+               <span class="input-unit-badge">{{ adjustingItem.unit }}</span>
+             </div>
            </div>
 
            <div class="form-group">
-              <label>Reason</label>
-              <textarea v-model="stockAdjustment.reason" rows="2" class="form-textarea" placeholder="Why is this changing?"></textarea>
+              <label>Reason for Adjustment</label>
+              <textarea v-model="stockAdjustment.reason" rows="2" class="form-textarea-modern" placeholder="e.g. Weekly restock from vendor"></textarea>
            </div>
         </div>
-        <div class="modal-footer">
-           <button @click="adjustingItem = null" class="btn-ghost">Cancel</button>
-           <button @click="confirmStockAdjustment" class="btn-primary" :disabled="saving">Confirm Adjustment</button>
+        <div class="modal-footer-modern">
+           <button @click="adjustingItem = null" class="btn-cancel">Cancel</button>
+           <button @click="confirmStockAdjustment" class="btn-save" :disabled="saving">Confirm Changes</button>
         </div>
       </div>
     </div>
-  </div>
+    </div>  
 </template>
 
 <script>
@@ -836,19 +817,12 @@ export default {
       description: '',
       quantity: 0,
       unit: 'kg',
-      reorderPoint: 0,
-      reorderQuantity: 0,
-      costPerUnit: 0,
+      totalPrice: 0, // 👈 修复这里：原本是 costPerUnit
+      lowStockThreshold: 10,
       expirationDate: '',
       daysBeforeExpiryAlert: 7,
       totalQuantity: 0,
-      supplier: {
-        name: '',
-        contact: '',
-        email: ''
-      },
-      storageLocation: '',
-      notes: ''
+      availableQuantity: 0
     });
     
     const stockAdjustment = ref({
@@ -967,26 +941,27 @@ export default {
           delete itemData.totalPrice;
         }
         
-        // Set default values for reorder fields (since we removed them)
+        // Map the new UI threshold to the backend's expected reorder field
         if (itemData.itemType === 'consumable') {
-          itemData.reorderPoint = 0;
+          itemData.reorderPoint = itemData.lowStockThreshold || 10;
           itemData.reorderQuantity = 0;
+        } else if (itemData.itemType === 'equipment') {
+          itemData.reorderPoint = itemData.lowStockThreshold || 5;
         }
         
-        if (editingItem.value) {
-          await axios.put(
-            `${API_URL}/inventory/items/${editingItem.value._id}`,
-            itemData,
-            { headers: getAuthHeaders() }
-          );
+     if (editingItem.value) {
+          // Update
+          const response = await axios.put(API_URL + `/inventory/items/${editingItem.value._id}`, itemData, { headers: getAuthHeaders() });
+          
+         const index = items.value.findIndex(i => i._id === editingItem.value._id);
+          if (index !== -1) {
+             items.value.splice(index, 1, response.data);
+          }
           alert('Item updated successfully');
         } else {
-          await axios.post(
-            API_URL + '/inventory/items',
-            itemData,
-            { headers: getAuthHeaders() }
-          );
-          alert('Item added successfully');
+          // Create
+          await axios.post(API_URL + '/inventory/items', itemData, { headers: getAuthHeaders() });
+          alert('Item added to inventory');
         }
         
         closeModal();
@@ -1001,6 +976,7 @@ export default {
         saving.value = false;
       }
     };
+
     
     // Bulk Add Methods
     const addBulkRow = (type = 'consumable') => {
@@ -1107,14 +1083,14 @@ export default {
             }
           };
           
-          if (row.itemType === 'consumable') {
+        if (row.itemType === 'consumable') {
             // Calculate costPerUnit from totalPrice and quantity
             const costPerUnit = row.quantity > 0 ? (row.totalPrice || 0) / row.quantity : 0;
             Object.assign(item, {
               quantity: row.quantity || 0,
-              unit: row.unit || 'kg',  // Ensure unit has a default value
+              unit: row.unit || 'kg', 
               costPerUnit: costPerUnit,
-              reorderPoint: 0,
+              reorderPoint: 10,             // 👈 给一个默认的低库存触发值 (比如 10)
               reorderQuantity: 0,
               expirationDate: row.expirationDate || null,
               daysBeforeExpiryAlert: row.daysBeforeExpiryAlert || 7
@@ -1170,12 +1146,29 @@ export default {
     };
     
     // Existing helper methods
+    // Replace the existing editItem function with this:
     const editItem = (item) => {
       editingItem.value = item;
       itemForm.value = { ...item };
+
+      itemForm.value.lowStockThreshold = item.lowStockThreshold || item.reorderPoint || (item.itemType === 'consumable' ? 10 : 5);
+      
+      // 1. Calculate totalPrice for the frontend form
+      if (item.itemType === 'consumable') {
+        itemForm.value.totalPrice = (item.quantity || 0) * (item.costPerUnit || 0);
+      }
+      
+      // 2. Format the date properly so the HTML input can read it
+      if (item.expirationDate) {
+        itemForm.value.expirationDate = new Date(item.expirationDate).toISOString().split('T')[0];
+      }
+
       if (!itemForm.value.supplier) {
         itemForm.value.supplier = { name: '', contact: '', email: '' };
       }
+      
+      // Ensure the modal actually opens
+      showAddItemModal.value = true; 
     };
     
     const adjustStock = (item) => {
@@ -1255,13 +1248,16 @@ export default {
         alert('Item deleted successfully');
         await loadItems();
         await loadStatistics();
+        // 👇 ADD THESE TWO LINES SO THE ALERT TABS REFRESH!
+        await loadLowStockAlerts();
+        await loadExpiringItems();
       } catch (error) {
         console.error('Error deleting item:', error);
         alert('Failed to delete item');
       }
     };
     
-    const closeModal = () => {
+  const closeModal = () => {
       showAddItemModal.value = false;
       editingItem.value = null;
       itemForm.value = {
@@ -1271,15 +1267,12 @@ export default {
         description: '',
         quantity: 0,
         unit: 'kg',
-        reorderPoint: 0,
-        reorderQuantity: 0,
-        costPerUnit: 0,
+        totalPrice: 0, 
+        lowStockThreshold: 10,
         expirationDate: '',
         daysBeforeExpiryAlert: 7,
-        totalQuantity: 0,
-        supplier: { name: '', contact: '', email: '' },
-        storageLocation: '',
-        notes: ''
+        totalQuantity: 0,         // 👈 Ensure this is reset
+        availableQuantity: 0      // 👈 Ensure this is reset
       };
     };
     
@@ -1292,10 +1285,6 @@ export default {
       return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
     
-    const formatStatus = (status) => {
-      return status.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    };
-    
     const getStatusClass = (status) => {
       const classMap = {
         'active': 'success',
@@ -1305,6 +1294,36 @@ export default {
         'expired': 'danger'
       };
       return classMap[status] || 'secondary';
+    };
+
+    const getItemStatus = (item) => {
+      if (item.itemType === 'consumable') {
+        if (item.quantity <= 0) return 'out-of-stock';
+        
+        const threshold = item.lowStockThreshold || item.reorderPoint || 10;
+        if (item.quantity <= threshold) return 'low-stock';
+        
+        if (item.expirationDate) {
+          const now = new Date();
+          const exp = new Date(item.expirationDate);
+          if (exp < now) return 'expired';
+          
+          const days = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+          if (days > 0 && days <= (item.daysBeforeExpiryAlert || 7)) return 'expiring-soon';
+        }
+      } else {
+        // Equipment
+        if (item.availableQuantity <= 0) return 'out-of-stock';
+        const threshold = item.lowStockThreshold || item.reorderPoint || 5;
+        if (item.availableQuantity <= threshold) return 'low-stock';
+      }
+      return 'active'; // Default good status
+    };
+
+    // 2. Make sure your formatStatus function doesn't crash on empty values
+    const formatStatus = (status) => {
+      if (!status) return 'Active';
+      return status.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     };
     
     const isExpiringSoon = (item) => {
@@ -1367,6 +1386,7 @@ export default {
       formatNumber,
       formatStatus,
       getStatusClass,
+      getItemStatus,
       isExpiringSoon,
       daysUntilExpiry
     };
@@ -1375,6 +1395,190 @@ export default {
 </script>
 
 <style scoped>
+
+/* 🌟 高端弹窗核心样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px); /* 背景模糊，非常高级 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-window {
+  background: white;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalPop 0.3s ease-out;
+}
+
+.modal-window.mini { max-width: 450px; }
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #f8fafc;
+}
+
+.header-title h3 { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
+.header-title p { font-size: 13px; color: #64748b; margin: 4px 0 0; }
+
+.btn-close-x {
+  background: #e2e8f0;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.btn-close-x:hover { background: #fee2e2; color: #ef4444; }
+
+.modal-body-scroll {
+  padding: 32px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body { padding: 32px; }
+
+/* 表单布局 */
+.form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  margin: 24px 0 16px;
+}
+.form-section-title:first-child { margin-top: 0; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group.full { grid-column: span 2; }
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+/* 输入框样式对齐 Add Package */
+.form-input-modern, .form-select-modern, .form-textarea-modern {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+.form-input-modern:focus { border-color: #3b82f6; background: white; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+/* 类型选择器卡片样式 */
+.type-selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.type-card {
+  border: 2px solid #f1f5f9;
+  padding: 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+.type-card.active { border-color: #3b82f6; background: #eff6ff; }
+.type-card input { display: none; }
+.type-icon { font-size: 24px; }
+.type-info strong { display: block; font-size: 14px; color: #1e293b; }
+.type-info span { font-size: 11px; color: #64748b; }
+
+/* 库存调整预览卡片 */
+.adjustment-preview-card {
+  background: #0f172a;
+  color: white;
+  padding: 24px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  position: relative;
+}
+.preview-side { display: flex; flex-direction: column; align-items: center; }
+.preview-label { font-size: 10px; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+.preview-value { font-size: 28px; font-weight: 800; }
+.preview-value.highlight { color: #3b82f6; }
+.preview-arrow { font-size: 20px; opacity: 0.5; }
+.preview-unit { position: absolute; bottom: 8px; right: 16px; font-size: 12px; color: #475569; }
+
+/* 调整类型切换组 */
+.action-toggle-group {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+.action-toggle-group button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+}
+.action-toggle-group button.active { background: white; color: #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+/* 底部按钮 */
+.modal-footer-modern {
+  padding: 24px 32px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.btn-cancel { padding: 12px 24px; border: none; background: #e2e8f0; color: #475569; border-radius: 12px; font-weight: 600; cursor: pointer; }
+.btn-save { padding: 12px 24px; border: none; background: #0f172a; color: white; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-save:hover { background: #1e293b; transform: translateY(-1px); }
+
+.large-font { font-size: 24px; font-weight: 700; text-align: center; }
+.input-with-badge { position: relative; }
+.input-unit-badge { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #94a3b8; }
 /* Admin Container */
 .admin-container {
   display: flex;
@@ -1700,9 +1904,14 @@ export default {
   align-items: center;
 }
 
-.status-pill.good { background: #ecfdf5; color: #10b981; }
-.status-pill.low { background: #fffbeb; color: #d97706; }
-.status-pill.out { background: #fef2f2; color: #ef4444; }
+/* Green for Active */
+.status-pill.success { background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; }
+/* Orange for Low Stock / Expiring */
+.status-pill.warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+/* Red for Out of Stock / Expired */
+.status-pill.danger { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+/* Gray fallback */
+.status-pill.secondary { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
 
 .badge-warning-xs {
   background: #fff7ed;
@@ -1905,5 +2114,163 @@ export default {
 @media (max-width: 640px) {
   .stats-grid { grid-template-columns: 1fr; }
   .header-actions { display: none; }
+}
+
+/* 批量表格专用删除按钮 */
+.btn-icon-danger.square {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.btn-icon-danger.square:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+/* ================= 🌟 智能警报看板专属高级样式 🌟 ================= */
+.alerts-container-grid {
+  display: grid;
+  /* 自动响应式：屏幕大时并排多列，屏幕小时自动单列 */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.modern-alert-card {
+  display: flex;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-alert-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -3px rgba(15, 23, 42, 0.08);
+}
+
+/* 侧边立体颜色条 (橙色和红色) */
+.modern-alert-card.amber .alert-indicator {
+  width: 6px;
+  background: linear-gradient(to bottom, #f59e0b, #d97706);
+}
+.modern-alert-card.red .alert-indicator {
+  width: 6px;
+  background: linear-gradient(to bottom, #ef4444, #dc2626);
+}
+
+.alert-content-wrapper {
+  display: flex;
+  flex: 1;
+  padding: 16px 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.alert-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.alert-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.item-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.category-tag {
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.alert-metrics-grid {
+  display: flex;
+  gap: 28px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m-label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.m-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* 核心数字颜色高亮 */
+.m-value.critical-amber { color: #d97706; }
+.m-value.critical-red { color: #ef4444; }
+
+/* 快捷操作现代化胶囊按钮 */
+.btn-alert-action {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Restock 按钮样式 (浅橙底，深橙字) */
+.btn-alert-action.restock {
+  background: #fef3c7;
+  color: #b45309;
+}
+.btn-alert-action.restock:hover {
+  background: #b45309;
+  color: #ffffff;
+}
+
+/* Manage/Dispose 按钮样式 (浅红底，深红字) */
+.btn-alert-action.dispose {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.btn-alert-action.dispose:hover {
+  background: #b91c1c;
+  color: #ffffff;
 }
 </style>

@@ -78,9 +78,13 @@
           </router-link></li>
           
           <li><router-link to="/provider/quotations" active-class="active-link">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span class="nav-text">Quotations</span>
-          </router-link></li>
+  <div class="icon-wrapper">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+    <span v-if="pendingQuotationsCount > 0" class="cart-pulse"></span>
+  </div>
+  <span class="nav-text">Quotations</span>
+  <span v-if="pendingQuotationsCount > 0" class="cart-badge">{{ pendingQuotationsCount }}</span>
+</router-link></li>
           
           <li><router-link to="/provider/menu" active-class="active-link">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -167,13 +171,20 @@
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 import { useChatStore } from '@/stores/chat'
+import { useQuotationsStore } from '@/stores/quotations'
 
 export default {
-  mounted() {
+ mounted() {
     const authStore = useAuthStore()
     if (authStore.isAuthenticated && authStore.user?.role !== 'superadmin') {
       const chatStore = useChatStore()
       chatStore.startPolling()
+      
+      // 新增：如果是商家，初始化加载 Quotations 数据
+      if (authStore.isCateringProvider) {
+        const quotationsStore = useQuotationsStore()
+        quotationsStore.loadFromStorage() 
+      }
     }
   },
   beforeUnmount() {
@@ -217,6 +228,14 @@ export default {
       return chatStore.unreadCount
     }
   },
+  pendingQuotationsCount() {
+      const authStore = useAuthStore()
+      if (!authStore.isCateringProvider) return 0
+      
+      const quotationsStore = useQuotationsStore()
+      // 过滤出 status 为 'pending' 的请求数量
+      return quotationsStore.allQuotations.filter(q => q.status === 'pending').length
+    },
   methods: {
     logout() {
       const authStore = useAuthStore()
