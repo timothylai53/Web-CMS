@@ -137,13 +137,32 @@ router.get('/my-quotations', authenticate, async (req, res) => {
 });
 
 // Get all quotations (Admin only)
-router.get('/', authenticate, isAdmin, async (req, res) => {
+// Get all quotations (Admin & Catering Provider)
+// 注意：我移除了原有的 isAdmin 中间件，改在内部判断角色，这样更安全灵活
+router.get('/', authenticate, async (req, res) => {
   try {
-    const quotations = await Quotation.find()
+    let query = {}; // 默认查全部
+
+    // 1. 判断角色：如果是 cateringProvider，只查属于他自己的订单
+    if (req.user.role === 'cateringProvider') {
+      query = { providerId: req.user.userId };
+    } 
+    // 2. 如果是 admin 或 superadmin，保持 query 为空，可以看全部
+    else if (['admin', 'superadmin'].includes(req.user.role)) {
+      query = {}; 
+    } 
+    // 3. 其他角色直接拒绝访问
+    else {
+      return res.status(403).json({ message: 'Not authorized to view these quotations' });
+    }
+
+    // 将上面决定好的 query 丢进 find() 里面
+    const quotations = await Quotation.find(query)
       .populate('userId', 'username email')
       .populate('providerId', 'businessName email phone')
       .populate('packageId', PACKAGE_POPULATE_FIELDS)
       .sort({ createdAt: -1 });
+      
     res.json(quotations);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
