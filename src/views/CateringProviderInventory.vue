@@ -885,11 +885,11 @@ export default {
       }
     };
     
-    const loadItems = async () => {
+  const loadItems = async () => {
       loading.value = true;
       try {
         const params = {
-          itemType: activeTab.value === 'equipment' ? 'equipment' : 'consumable',
+          // 💡 移除 itemType 参数，直接拉取所有类型的数据
           search: searchQuery.value,
           category: filterCategory.value
         };
@@ -899,6 +899,7 @@ export default {
           headers: getAuthHeaders()
         });
         
+        // 💡 前端的 computed property (filteredConsumables 和 filteredEquipment) 会自动把它们分开
         items.value = response.data;
       } catch (error) {
         console.error('Error loading items:', error);
