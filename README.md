@@ -1,6 +1,6 @@
 # CaterFlow — Catering Management System
 
-A multi-provider catering marketplace built as my Final Year Project at Universiti Utara Malaysia (UUM). Customers can browse packages from different caterers, customise a menu, then place and pay for an order or ask for a quotation. Caterers run their menus, orders, kitchen inventory and events from their own dashboard. A super admin approves new caterers and manages the platform.
+A multi-provider catering marketplace built solo as my Final Year Project at Universiti Utara Malaysia (UUM). Customers can browse packages from different caterers, customise a menu, then place and pay for an order or ask for a quotation. Caterers run their menus, orders, kitchen inventory and events from their own dashboard. A super admin approves new caterers and manages the platform.
 
 ## Features
 
