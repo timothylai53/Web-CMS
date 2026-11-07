@@ -28,3 +28,8 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Environment files (keep .env.example; .env.production only holds the public API URL)
+.env
+.env.local
+.env.*.local
